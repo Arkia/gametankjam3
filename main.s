@@ -7,6 +7,7 @@
 .SECTION "MainProg" BANK 1 SLOT 4
 reset:
   ; Init Code
+  cld
   stz BANK_FLAGS  ; Reset bank settings
   lda #%01001001  ; Enable blitter and colorfill mode
   sta DMA_FLAGS   ; Setup blitter
@@ -34,14 +35,16 @@ reset:
   dex
   bpl -
   
-  lda #127
-  sta VOICE_VOLUME
-  lda #127
-  sta VOICE_DUTY
-  lda #$2C
-  sta VOICE_STEP_LO
-  lda #$08
-  sta VOICE_STEP_HI
+  ldx #2
+-
+  lda #15
+  sta VOICE_VOLUME,x
+  lda chord_step_lo.w,x
+  sta VOICE_STEP_LO,x
+  lda chord_step_hi.w,x
+  sta VOICE_STEP_HI,x
+  dex
+  bpl -
   
   stz AUDIO_RESET
   lda #$FF
@@ -65,6 +68,11 @@ irq:
   
 nmi:
   rti
+  
+chord_step_lo:
+  .DB $DC $1F $48
+chord_step_hi:
+  .DB $04 $06 $07
 .ENDS
 
 .SECTION "ACPImport" BANK 0 SLOT 3

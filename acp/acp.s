@@ -26,6 +26,7 @@ sample_acc    DB
 
 acp_reset:
   sei
+  cld
   ldx #VOICE_COUNT-1
 -
   stz voice_pos_lo,x
@@ -50,20 +51,20 @@ sample_loop:
   sta voice_pos_hi,x    ; 4 (26)
   cmp voice_duty,x      ; 4 (30)
   lda voice_volume,x    ; 4 (34)
-  bcc +                 ; 3 (37)
-  eor #$FF              ; 2 (39)
-  ina                   ; 2 (41)
+  bcc +
+  eor #$FF
+  ina
 +
-  clc                   ; 2 (43)
-  adc sample_acc        ; 3 (46)
-  bvc +                 ; 3 (49)
-  lda #$7F              ; 2 (51)
-  bbr7 sample_acc,+     ; 5 (56)
-  lda #$80              ; 2 (58)
+  clc
+  adc sample_acc
+  bvc +
+  lda #$7F
+  bbr7 sample_acc,+
+  lda #$80
 +
-  sta sample_acc        ; 3 (61)
-  dex                   ; 2 (63)
-  bpl sample_loop       ; 2 (65)
+  sta sample_acc
+  dex
+  bpl sample_loop
   lda sample_acc
   bpl +
   ina
