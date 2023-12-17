@@ -6,18 +6,16 @@ SLOT 2 $0200 $0E00 "WRAM"
 .ENDME
 
 .DEFINE DAC_OUT $80FF
-.DEFINE VOICE_COUNT 6
+.DEFINE VOICE_COUNT 8
 
 .RAMSECTION "ZP" BANK 0 SLOT 0
 voice_volume  DSB VOICE_COUNT
-voice_wave_lo DSB VOICE_COUNT
-voice_wave_hi DSB VOICE_COUNT
+voice_duty    DSB VOICE_COUNT
 voice_step_lo DSB VOICE_COUNT
 voice_step_hi DSB VOICE_COUNT
 voice_pos_lo  DSB VOICE_COUNT
 voice_pos_hi  DSB VOICE_COUNT
-wave_ptr      DW
-sample_acc    DW
+sample_acc    DB
 .ENDS
 
 .ROMBANKSIZE $0E00
@@ -27,10 +25,14 @@ sample_acc    DW
 .ORGA $0F00
 
 acp_reset:
+  sei
   ldx VOICE_COUNT-1
 -
+  stz voice_volume,x
   stz voice_pos_lo,x
   stz voice_pos_hi,x
+  stz voice_step_lo,x
+  stz voice_step_hi,x
   dex
   bpl -
   cli
@@ -39,37 +41,37 @@ acp_loop:
   
 acp_irq:
   stz sample_acc
-  stz sample_acc+1
   
   ldx VOICE_COUNT-1
 sample_loop:
-  lda voice_wave_lo,x     ; 4
-  sta wave_ptr            ; 3 (7)
-  lda voice_wave_hi,x     ; 4 (11)
-  sta wave_ptr+1          ; 3 (14)
-  clc                     ; 2 (16)
-  lda voice_step_lo,x     ; 4 (20)
-  adc voice_pos_lo,x      ; 4 (24)
-  sta voice_pos_lo,x      ; 4 (28)
-  lda voice_step_hi,x     ; 4 (32)
-  adc voice_pos_hi,x      ; 4 (36)
-  sta voice_pos_hi,x      ; 4 (40)
-  lsr a                   ; 2 (42)
-  lsr a                   ; 2 (44)
-  tay                     ; 2 (46)
-  lda (wave_ptr),y        ; 5 (51)
-  ldy voice_volume,x      ; 4 (55)
-  beq +                   ; 3 (58)
--
-  lsr a                   ; 2
-  dey                     ; 2 (4)
-  bne -                   ; 3 (7)
-+                         ; 7 * 8 (114)
-  clc                     ; 2 (116)
-  adc sample_acc          ; 3 (119)
-  sta sample_acc          ; 3 (121)
-  dex                     ; 2 (123)
-  bpl sample_loop         ; 3 (126)
+  clc                   ; 2
+  lda voice_pos_lo,x    ; 4 (6)
+  adc voice_step_lo,x   ; 4 (10)
+  sta voice_pos_lo,x    ; 4 (14)
+  lda voice_pos_hi,x    ; 4 (18)
+  adc voice_step_hi,x   ; 4 (22)
+  sta voice_pos_hi,x    ; 4 (26)
+  cmp voice_duty,x      ; 4 (30)
+  lda voice_volume,x    ; 4 (34)
+  bcc +                 ; 3 (37)
+  eor #$FF              ; 2 (39)
+  ina                   ; 2 (41)
++
+  clc                   ; 2 (43)
+  adc sample_acc        ; 3 (46)
+  bvc +                 ; 3 (49)
+  lda #$7F              ; 2 (51)
+  bbr7 sample_acc,+     ; 5 (56)
+  lda #$80              ; 2 (58)
++
+  sta sample_acc        ; 3 (61)
+  dex                   ; 2 (63)
+  bpl sample_loop       ; 2 (65)
+  clc
+  adc #128
+  bcc +
+  lda #$FF
++
   sta DAC_OUT
   rti
   
