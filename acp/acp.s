@@ -26,13 +26,10 @@ sample_acc    DB
 
 acp_reset:
   sei
-  ldx VOICE_COUNT-1
+  ldx #VOICE_COUNT-1
 -
-  stz voice_volume,x
   stz voice_pos_lo,x
   stz voice_pos_hi,x
-  stz voice_step_lo,x
-  stz voice_step_hi,x
   dex
   bpl -
   cli
@@ -42,7 +39,7 @@ acp_loop:
 acp_irq:
   stz sample_acc
   
-  ldx VOICE_COUNT-1
+  ldx #VOICE_COUNT-1
 sample_loop:
   clc                   ; 2
   lda voice_pos_lo,x    ; 4 (6)
@@ -67,11 +64,12 @@ sample_loop:
   sta sample_acc        ; 3 (61)
   dex                   ; 2 (63)
   bpl sample_loop       ; 2 (65)
-  clc
-  adc #128
-  bcc +
-  lda #$FF
+  lda sample_acc
+  bpl +
+  ina
 +
+  clc
+  adc #127
   sta DAC_OUT
   rti
   

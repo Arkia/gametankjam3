@@ -18,7 +18,34 @@ reset:
   lda acp_prog.w,x
   sta ACP_PROG_START,x
   inx
+  cpx #acp_size
   bne -
+  
+  ldx #5
+-
+  lda acp_vectors.w,x
+  sta $3FFA,x
+  dex
+  bpl -
+  
+  ldx #VOICE_COUNT-1
+-
+  stz VOICE_VOLUME,x
+  dex
+  bpl -
+  
+  lda #127
+  sta VOICE_VOLUME
+  lda #127
+  sta VOICE_DUTY
+  lda #$2C
+  sta VOICE_STEP_LO
+  lda #$08
+  sta VOICE_STEP_HI
+  
+  stz AUDIO_RESET
+  lda #$FF
+  sta AUDIO_RATE
   
   lda #16
   sta DMA_VX
