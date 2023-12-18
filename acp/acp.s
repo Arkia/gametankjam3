@@ -51,20 +51,21 @@ sample_loop:
   sta voice_pos_hi,x    ; 4 (26)
   cmp voice_duty,x      ; 4 (30)
   lda voice_volume,x    ; 4 (34)
-  bcc +
-  eor #$FF
-  ina
+  bcc +                 ; 3 (37)
+  eor #$FF              ; 2 (39)
+  ina                   ; 2 (41)
 +
-  clc
-  adc sample_acc
-  bvc +
-  lda #$7F
-  bbr7 sample_acc,+
-  lda #$80
+  clc                   ; 2 (43)
+  adc sample_acc        ; 3 (46)
+  bvc +                 ; 3 (49)
+  lda #$7F              ; 2 (51)
+  bit sample_acc        ; 3 (54)
+  bpl,+                 ; 3 (57)
+  lda #$80              ; 2 (59)
 +
-  sta sample_acc
-  dex
-  bpl sample_loop
+  sta sample_acc        ; 3 (62)
+  dex                   ; 2 (64)
+  bpl sample_loop       ; 3 (67)
   lda sample_acc
   bpl +
   ina
