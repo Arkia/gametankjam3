@@ -31,13 +31,12 @@
 reset:
   ; Init Code
   cld
+  stz DMA_FLAGS
   lda #%00111000  ; Clip draws and draw to frame 1
   sta BANK_FLAGS  ; Reset bank settings
   sta bank_flags  ; Update mirror
-  lda #%01000001  ; Enable blitter and IRQ
-  sta DMA_FLAGS   ; Setup blitter
-  sta dma_flags   ; Update mirror
   
+  stz $0F
   lda #$80
   sta draw_mode
   stz draw_status
@@ -48,7 +47,7 @@ reset:
   eor #1
   sta draw_write+1
   
-  lda #%01000101  ; Enable NMI
+  lda #%01000101  ; Enable blitter and interrupts
   sta DMA_FLAGS   ; Set blitter flags
   sta dma_flags   ; Update mirror
   lda #$7F        ; Disable ACP
@@ -80,14 +79,13 @@ reset:
   sta AUDIO_RATE
   
   ldy #0
-  lda #$00
+-
+  lda test_draw.w,y
   sta (draw_write),y
   iny
-  lda #%00011111
-  sta (draw_write),y
-  iny
-  lda #7
-  sta (draw_write),y
+  cpy #3
+  bne -
+  
   lda draw_status
   ora #%01000000
   sta draw_status
@@ -95,7 +93,12 @@ reset:
 main_loop:
   bra main_loop
   
+test_draw:
+  .DB $00 $04                 ; Clear screen
+  .DB $07                     ; Halt
+  
 irq:
+  inc $0F
   pha
   phx
   phy
@@ -175,7 +178,6 @@ draw_noop:
   rti
   
 draw_clear_begin:
-  stz $0F
   lda #%01000000
   sta draw_mode
   lda dma_flags
@@ -198,7 +200,20 @@ draw_clear_begin:
   rti
   
 draw_clear_cont:
+  stz $0F
   ldx draw_data
+  cpx #3
+  bne +
+  lda draw_mode
+  and #%10111111
+  sta draw_mode
+  lda dma_flags
+  sta DMA_FLAGS
+  ply
+  plx
+  pla
+  rti
++
   lda draw_clear_x.w,x
   sta DMA_VX
   lda draw_clear_y.w,x
@@ -207,14 +222,6 @@ draw_clear_cont:
   lda #1
   sta DMA_START
   stx draw_data
-  cpx #3
-  bne +
-  lda draw_mode
-  and #%10111111
-  sta draw_mode
-  lda dma_flags
-  sta DMA_FLAGS
-+
   ply
   plx
   pla
@@ -224,6 +231,42 @@ draw_clear_x:
   .DB 64 0 64
 draw_clear_y:
   .DB 0 64 64
+  
+draw_box:
+  stz $0F
+  lda (draw_read)
+  sta DMA_VX
+  inc draw_read
+  lda (draw_read)
+  sta DMA_VY
+  inc draw_read
+  lda (draw_read)
+  sta DMA_WIDTH
+  inc draw_read
+  lda (draw_read)
+  sta DMA_HEIGHT
+  inc draw_read
+  lda (draw_read)
+  sta DMA_COLOR
+  inc draw_read
+  lda #1
+  sta DMA_START
+  ply
+  plx
+  pla
+  rti
+  
+draw_dma_flags:
+  lda dma_flags
+  and #%01000111
+  ora (draw_read)
+  inc draw_read
+  sta DMA_FLAGS
+  sta dma_flags
+  ply
+  plx
+  pla
+  rti
   
 draw_end:
   lda draw_status
@@ -241,10 +284,10 @@ draw_start_table:
   .DW draw_clear_begin-1  ; 0 - Clear
   .DW draw_noop-1         ; 1 - String
   .DW draw_noop-1         ; 2 - Map
-  .DW draw_noop-1         ; 3 - Box
+  .DW draw_box-1          ; 3 - Box
   .DW draw_noop-1         ; 4 - Sprite
   .DW draw_noop-1         ; 5 - Sprite Page
-  .DW draw_noop-1         ; 6 - DMA Flags
+  .DW draw_dma_flags-1    ; 6 - DMA Flags
   .DW draw_end-1          ; 7 - End
   
 draw_update_table:

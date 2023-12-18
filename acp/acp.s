@@ -60,7 +60,7 @@ sample_loop:
   bvc +                 ; 3 (49)
   lda #$7F              ; 2 (51)
   bit sample_acc        ; 3 (54)
-  bpl,+                 ; 3 (57)
+  bpl +                 ; 3 (57)
   lda #$80              ; 2 (59)
 +
   sta sample_acc        ; 3 (62)
