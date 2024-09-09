@@ -31,6 +31,7 @@
 reset:
   ; Init Code
   cld
+  sei
   stz DMA_FLAGS
   lda #%00111000  ; Clip draws and draw to frame 1
   sta BANK_FLAGS  ; Reset bank settings
@@ -50,6 +51,8 @@ reset:
   lda #%01000101  ; Enable blitter and interrupts
   sta DMA_FLAGS   ; Set blitter flags
   sta dma_flags   ; Update mirror
+  cli
+  
   lda #$7F        ; Disable ACP
   sta AUDIO_RATE
   
