@@ -63,3 +63,5 @@ build/*
 *.gtr
 *.gtr
 *.gtr
+*.gtr
+test.gtr

@@ -97,7 +97,7 @@ main_loop:
   bra main_loop
   
 test_draw:
-  .DB $00 $04                 ; Clear screen
+  .DB $00 $FB                 ; Clear screen
   .DB $07                     ; Halt
   
 irq:
