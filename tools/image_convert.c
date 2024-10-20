@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -30,14 +31,14 @@ int main(int argc, char **argv) {
   }
   
   int w,h,n;
-  char *palette = stbi_load(PALETTE_IMAGE, &w, &h, &n, 4);
+  uint8_t *palette = stbi_load(PALETTE_IMAGE, &w, &h, &n, 4);
   if (!palette) {
     printf("Failed to load palette file!\n");
     return -1;
   }
   palette[3] = 0;
   
-  char *input_image = stbi_load(input_file_name, &w, &h, &n, 4);
+  uint8_t *input_image = stbi_load(input_file_name, &w, &h, &n, 4);
   if (!input_image) {
     printf("Failed to load input image!\n");
     return -1;
@@ -45,10 +46,10 @@ int main(int argc, char **argv) {
   
   printf("Loaded image %s\nW = %d\nH = %d\n", input_file_name, w, h);
   
-  char page_buffer[128*128];
+  uint8_t page_buffer[128*128];
   memset(page_buffer, 0, 128*128);
-  char *buffer_pixel = page_buffer;
-  char *input_pixel = input_image;
+  uint8_t *buffer_pixel = page_buffer;
+  uint8_t *input_pixel = input_image;
   
   if (w > 128) w = 128;
   if (h > 128) h = 128;
@@ -58,22 +59,22 @@ int main(int argc, char **argv) {
   
   for (int y=0; y<h; y++) {
     for (int x=0; x<w; x++) {
-      char r = *input_pixel++;
-      char g = *input_pixel++;
-      char b = *input_pixel++;
-      char a = *input_pixel++;
+      uint8_t r = *input_pixel++;
+      uint8_t g = *input_pixel++;
+      uint8_t b = *input_pixel++;
+      uint8_t a = *input_pixel++;
       
       if (!a) {
         *buffer_pixel++ = 0;
       } else {
         int distance = 0x7FFFFFF;
-        char pixel_byte;
+        uint8_t pixel_byte;
         
         for (int i=1; i<256; i++) {
           int palette_index = i*4;
-          char d_r = r - palette[palette_index];
-          char d_g = g - palette[palette_index+1];
-          char d_b = b - palette[palette_index+2];
+          int d_r = r - palette[palette_index];
+          int d_g = g - palette[palette_index+1];
+          int d_b = b - palette[palette_index+2];
           
           int new_distance = d_r*d_r + d_g*d_g + d_b*d_b;
           if (new_distance < distance) {
@@ -91,12 +92,12 @@ int main(int argc, char **argv) {
   
   printf("Finding output height\n");
   
-  char output_buffer[128*128];
+  uint8_t output_buffer[128*128];
   int line_count = 128;
   int line_empty = 1;
   
   while (line_empty && line_count > 0) {
-    char *line_ptr = page_buffer + (line_count-1)*128;
+    uint8_t *line_ptr = page_buffer + (line_count-1)*128;
     
     for (int i=0; i<128; i++) {
       if (*line_ptr++) {
@@ -118,62 +119,61 @@ int main(int argc, char **argv) {
   
   printf("Compressing...\n");
   
-  for (int y=0; y<line_count; y++) { // While input index is within uncompressed data
-    for (int x=0; x<128; x++) {
-      int search_start = input_index - 128;
-      int run_offset = 0;
-      int run_length = 0;
+  while (input_index < input_size) {
+    int search_start = input_index - 128;
+    int run_offset = 0;
+    int run_length = 0;
+    
+    if (search_start < 0) search_start = 0;
+    while (search_start < input_index) {
+      int search_back = search_start;
+      int search_front = input_index;
+      int new_length = 0;
       
-      if (search_start < 0) search_start = 0;
-      while (search_start < input_index) {
-        int search_back = search_start;
-        int search_front = input_index;
-        int new_length = 0;
-        
-        for (int i=0; i<255; i++) { // Keep within uncompressed data
-          if (page_buffer[search_back++] != page_buffer[search_front++]) break;
-          new_length++;
-        }
-        
-        if (new_length > run_length) {
-          run_offset = input_index - search_start;
-          run_length = new_length;
-        }
-        
-        search_start++;
+      for (int i=0; i<255; i++) {
+        if (search_front == input_size) break;
+        if (page_buffer[search_back++] != page_buffer[search_front++]) break;
+        new_length++;
       }
       
-      if (run_length) {
-        if (sequence_length) {
+      if (new_length > run_length) {
+        run_offset = search_start - input_index;
+        run_length = new_length;
+      }
+      
+      search_start++;
+    }
+    
+    if (run_length) {
+      if (sequence_length) {
+        output_buffer[sequence_byte] = sequence_length-1;
+        sequence_length = 0;
+        sequence_byte = -1;
+      }
+      
+      output_buffer[output_index++] = run_offset;
+      output_buffer[output_index++] = run_length;
+      input_index += run_length;
+    } else {
+      if (sequence_length) {
+        sequence_length++;
+        if (sequence_length == 128) {
           output_buffer[sequence_byte] = sequence_length-1;
           sequence_length = 0;
           sequence_byte = -1;
-        }
-        
-        output_buffer[output_index++] = run_offset;
-        output_buffer[output_index++] = run_length;
-      } else {
-        if (sequence_length) {
-          sequence_length++;
-          if (sequence_length == 128) {
-            output_buffer[sequence_byte] = sequence_length-1;
-            sequence_length = 0;
-            sequence_byte = -1;
-          } else {
-            output_buffer[output_index++] = page_buffer[input_index];
-          }
         } else {
-          sequence_byte = output_index++;
-          sequence_length = 1;
-          output_buffer[output_index++] = page_buffer[input_index];
+          output_buffer[output_index++] = page_buffer[input_index++];
         }
+      } else {
+        sequence_byte = output_index++;
+        sequence_length = 1;
+        output_buffer[output_index++] = page_buffer[input_index++];
       }
-      
-      input_index++; // Advance by bytes consumed
     }
   }
   
-  printf("Compression Done. Final size = %d\n", output_index);
+  printf("Compression Done. Final size = %d\n", output_index+2);
+  printf("Compression Ratio: %d%%\n", 100*(output_index+2)/input_size);
   printf("Writing output to %s\n", output_file_name);
   
   FILE *output_file = fopen(output_file_name, "wb");
@@ -181,6 +181,7 @@ int main(int argc, char **argv) {
     printf("Failed to open output file %s\n", output_file_name);
     return -1;
   }
+  fwrite(&input_size, 2, 1, output_file);
   fwrite(output_buffer, 1, output_index, output_file);
   fclose(output_file);
   
