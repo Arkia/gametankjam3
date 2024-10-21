@@ -345,7 +345,7 @@ draw_update_table:
 
 .SECTION "ImageData" BANK 0 SLOT 3
 test_image:
-  .INCBIN "data/test.bin"
+  .INCBIN "data/player.bin"
 .ENDS
 
 .SECTION "ACPImport" BANK 0 SLOT 3

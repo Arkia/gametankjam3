@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
   else {
     output_file_name = malloc(MAX_PATH);
     strncpy(output_file_name, input_file_name, MAX_PATH);
-    char *extension_ptr = strchr(output_file_name, '.');
+    char *extension_ptr = strrchr(output_file_name, '.');
     if (!extension_ptr) extension_ptr = output_file_name + strlen(output_file_name);
     size_t space_left = MAX_PATH - (extension_ptr - output_file_name);
     strncpy(extension_ptr, ".bin", space_left);
