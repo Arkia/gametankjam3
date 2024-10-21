@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
           }
         }
         
-        *buffer_pixel++ = ~pixel_byte;
+        *buffer_pixel++ = pixel_byte;
       }
     }
     

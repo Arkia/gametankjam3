@@ -48,10 +48,10 @@ reset:
   eor #1
   sta draw_write+1
   
-  lda #%01000101  ; Enable blitter and interrupts
-  sta DMA_FLAGS   ; Set blitter flags
-  sta dma_flags   ; Update mirror
-  cli
+  ;lda #%01000101  ; Enable blitter and interrupts
+  ;sta DMA_FLAGS   ; Set blitter flags
+  ;sta dma_flags   ; Update mirror
+  ;cli
   
   lda #$7F        ; Disable ACP
   sta AUDIO_RATE
@@ -81,6 +81,18 @@ reset:
   lda #$FF
   sta AUDIO_RATE
   
+  jsr set_sprite_quadrant
+  jsr enable_sprite_ram
+  lda #<test_image
+  sta dc_input
+  lda #>test_image
+  sta dc_input+1
+  stz dc_output
+  lda #$40
+  sta dc_output+1
+  jsr decompress
+  ;jsr enable_blitter
+  
   ldy #0
 -
   lda test_draw.w,y
@@ -99,6 +111,37 @@ main_loop:
 test_draw:
   .DB $00 $FB                 ; Clear screen
   .DB $07                     ; Halt
+  
+enable_sprite_ram:
+  lda DMA_FLAGS
+  and #%11011110
+  sta DMA_FLAGS
+  rts
+  
+enable_blitter:
+  lda DMA_FLAGS
+  ora #%00000001
+  sta DMA_FLAGS
+  rts
+  
+set_sprite_quadrant:
+  lda #$FF
+  sta DMA_VX
+  sta DMA_VY
+  lda quadrant_gx_table.w,x
+  sta DMA_GX
+  lda quadrant_gy_table.w,x
+  sta DMA_GY
+  lda #1
+  sta DMA_WIDTH
+  sta DMA_HEIGHT
+  sta DMA_START
+  rts
+  
+quadrant_gx_table:
+  .DB 0, 128, 0, 128
+quadrant_gy_table:
+  .DB 0, 0, 128, 128
   
 irq:
   inc $0F
@@ -300,12 +343,19 @@ draw_update_table:
   
 .ENDS
 
+.SECTION "ImageData" BANK 0 SLOT 3
+test_image:
+  .INCBIN "data/test.bin"
+.ENDS
+
 .SECTION "ACPImport" BANK 0 SLOT 3
   acp_prog:
     .INCBIN "acp/acp.dat" READ -6 FREADSIZE acp_size
   acp_vectors:
     .INCBIN "acp/acp.dat" SKIP acp_size
 .ENDS
+
+.INCLUDE "decompress.s"
   
 .SECTION "VectorTable" BANK 1 SLOT 4 ORGA $FFFA FORCE
   .DW nmi
