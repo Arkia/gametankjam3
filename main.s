@@ -9,6 +9,19 @@
   dma_flags   db
 .ENDS
 
+.RAMSECTION "Scratch" BANK 0 SLOT 0
+  temp  dsb 4
+.ENDS
+
+.RAMSECTION "Controller" BANK 0 SLOT 0
+  p1_state    db
+  p2_state    db
+  p1_press    db
+  p2_press    db
+  p1_release  db
+  p2_release  db
+.ENDS
+
 .DEFINE DRAW_FRAME_DONE   $80
 .DEFINE DRAW_BUFFER_DOWN  $40
 
@@ -23,7 +36,7 @@
   draw_write      dw
 .ENDS
 
-.RAMSECTION "DrawBuffer" BANK 0 SLOT 2 ALIGN 256
+.RAMSECTION "DrawBuffer" BANK 0 SLOT 2 ALIGN 512
   draw_buffer     dsb 512
 .ENDS
 
@@ -340,6 +353,38 @@ draw_update_table:
   .DW draw_clear_cont-1   ; 0 - Clear
   .DW draw_noop-1         ; 1 - String
   .DW draw_noop-1         ; 2 - Map
+  
+update_input:
+  lda p1_state            ; Get current state of controller 1
+  sta temp                ; Save in scratch
+  lda GAMEPAD2            ; Reset latch on controller 1
+  ldx #0                  ; Index controller 1
+  .REPT 6
+    nop                   ; Delay
+  .ENDR
+-
+  lda GAMEPAD1,x          ; Read first byte
+  eor #$FF                ; Invert
+  asl                     ; Shift left
+  asl                     ; Shift left
+  and #%11000000          ; Grab top 2 bits (Start and A button)
+  sta temp+1              ; Save
+  lda GAMEPAD1,x          ; Read second byte
+  eor #$FF                ; Invert
+  and #%00111111          ; Mask out top 2 bits
+  ora temp+1              ; Combine with previous buttons
+  sta p1_state,x          ; Set controller state
+  eor #$FF                ; Not current buttons
+  and temp                ; And previous buttons
+  sta p1_release,x        ; Set controller released buttons
+  lda temp                ; Load previous buttons
+  eor #$FF                ; Not previous buttons
+  and p1_state,x          ; And current buttons
+  sta p1_press,x          ; Set controller pressed buttons
+  inx                     ; Next controller
+  cpx #2                  ; Last controller?
+  bne -                   ; Loop
+  rts
   
 .ENDS
 

@@ -66,3 +66,4 @@ build/*
 *.gtr
 test.gtr
 /tools/.vs
+*.gtr
