@@ -40,6 +40,10 @@
   draw_buffer     dsb 512
 .ENDS
 
+.RAMSECTION "InterruptVars" BANK 0 SLOT 0
+  frame_count     db
+.ENDS
+
 .SECTION "MainProg" BANK 1 SLOT 4
 reset:
   ; Init Code
@@ -60,11 +64,6 @@ reset:
   sta draw_read+1
   eor #1
   sta draw_write+1
-  
-  ;lda #%01000101  ; Enable blitter and interrupts
-  ;sta DMA_FLAGS   ; Set blitter flags
-  ;sta dma_flags   ; Update mirror
-  ;cli
   
   lda #$7F        ; Disable ACP
   sta AUDIO_RATE
@@ -94,6 +93,8 @@ reset:
   lda #$FF
   sta AUDIO_RATE
   
+  jsr enable_blitter
+  ldx #$0
   jsr set_sprite_quadrant
   jsr enable_sprite_ram
   lda #<test_image
@@ -104,7 +105,12 @@ reset:
   lda #$40
   sta dc_output+1
   jsr decompress
-  ;jsr enable_blitter
+  jsr enable_blitter
+  
+  lda #%01000101  ; Enable blitter and interrupts
+  sta DMA_FLAGS   ; Set blitter flags
+  sta dma_flags   ; Update mirror
+  cli
   
   ldy #0
 -
@@ -119,6 +125,8 @@ reset:
   sta draw_status
   
 main_loop:
+  jsr update_input            ; Read controllers
+  jsr wait_frame              ; Wait for VBLANK
   bra main_loop
   
 test_draw:
@@ -156,33 +164,19 @@ quadrant_gx_table:
 quadrant_gy_table:
   .DB 0, 0, 128, 128
   
+wait_frame:
+  lda frame_count             ; Load current frame counter
+-
+  wai                         ; Wait for interrupt
+  cmp frame_count             ; Compare to frame counter
+  beq -                       ; If counter hasn't changed, keep waiting
+  rts                         ; Return
+  
 irq:
-  inc $0F
   pha
   phx
   phy
-  bit draw_mode               ; Test draw mode. Set N if halted. Set V if continuing a draw command
-  bmi irq_end                 ; Exit IRQ if halted
-  bvc irq_next_com            ; Skip to next command if not continuing
-  lda draw_mode               ; Get current command
-  and #$3F                    ; Mask out mode bits
-  asl                         ; Multiply by 2
-  tax                         ; Use as table index
-  lda draw_update_table.w+1,x ; Read low byte of subroutine
-  pha                         ; Push on stack
-  lda draw_update_table.w,x   ; Read high byte of subroutine
-  pha                         ; Push on stack
-  rts                         ; Jump to command routine
-irq_next_com:
-  lda (draw_read)             ; Read next command
-  inc draw_read               ; Advance command pointer
-  asl                         ; Multiply by 2
-  tax                         ; Use as table index
-  lda draw_start_table.w+1,x  ; Read low byte of subroutine
-  pha                         ; Push on stack
-  lda draw_start_table.w,x    ; Read high byte of subroutine
-  pha                         ; Push on stack
-  rts                         ; Jump to command routine
+  stz DMA_START               ; Clear interrupt
 irq_end:
   ply
   plx
@@ -193,38 +187,8 @@ nmi:
   pha
   phx
   phy
-  bit draw_status           ; Test status of drawing engine. Set N if frame is ready. Set V if buffer is ready
-  bpl nmi_no_flip           ; Skip frame flip if frame is not ready
-  lda bank_flags            ; Load current bank flags
-  eor #%00001000            ; Flip framebuffer target
-  sta BANK_FLAGS            ; Update framebuffer target
-  sta bank_flags            ; Update mirror
-  lda dma_flags             ; Load current DMA flags
-  eor #%00000010            ; Flip framebuffer output
-  sta DMA_FLAGS             ; Update DMA flags
-  sta dma_flags             ; Update mirror
-  lda draw_status
-  and #%01111111
-  sta draw_status           ; Clear frame ready
-nmi_no_flip:
-  bvc nmi_no_buffer         ; Skip starting draw engine if buffer is not ready
-  bit draw_mode             ; Check if draw engine is halted
-  bpl nmi_no_buffer         ; If not don't start the new command buffer
-  stz draw_write            ; Reset write index
-  stz draw_read             ; Reset read index
-  lda draw_write+1          ; Get write page
-  eor #1                    ; Swap buffer
-  sta draw_write+1          ; Update write page
-  lda draw_read+1           ; Get read page
-  eor #1                    ; Swap buffer
-  sta draw_read+1           ; Update read page
-  stz draw_mode             ; Start draw engine
-  lda draw_status
-  and #%10111111
-  sta draw_status           ; Clear buffer ready
-  brk
+  inc frame_count           ; Increment frame counter
 nmi_no_buffer:
-  ; TODO: Sound/Music engine
   ply
   plx
   pla
@@ -355,14 +319,11 @@ draw_update_table:
   .DW draw_noop-1         ; 2 - Map
   
 update_input:
-  lda p1_state            ; Get current state of controller 1
-  sta temp                ; Save in scratch
   lda GAMEPAD2            ; Reset latch on controller 1
   ldx #0                  ; Index controller 1
-  .REPT 6
-    nop                   ; Delay
-  .ENDR
 -
+  lda p1_state,x          ; Get current controller state
+  sta temp                ; Save in scratch
   lda GAMEPAD1,x          ; Read first byte
   eor #$FF                ; Invert
   asl                     ; Shift left
@@ -384,7 +345,7 @@ update_input:
   inx                     ; Next controller
   cpx #2                  ; Last controller?
   bne -                   ; Loop
-  rts
+  rts                     ; Return
   
 .ENDS
 
