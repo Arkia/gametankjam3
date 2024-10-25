@@ -20,7 +20,9 @@ init_player:
   rts                 ; Return
 
 update_player:
-  bbr0 p1_state,+     ; Gamepad Up?
+  lda p1_state        ; Load player 1 gamepad
+  and #PAD_UP         ; Test dpad up
+  beq +               ; Skip if button not held
   sec                 ; Setup subtraction
   lda player_y        ; Get player Y subpixel
   sbc #<PLAYER_SPEED  ; Subtract subpixel speed
@@ -29,7 +31,9 @@ update_player:
   sbc #>PLAYER_SPEED  ; Subtract speed
   sta player_y+1      ; Set player Y
 +
-  bbr1 p1_state,+     ; Gamepad Down?
+  lda p1_state        ; Load player 1 gamepad
+  and #PAD_DOWN       ; Test dpad down
+  beq +               ; Skip if button not held
   clc                 ; Setup addition
   lda player_y        ; Get player Y subpixel
   adc #<PLAYER_SPEED  ; Add subpixel speed
@@ -38,7 +42,9 @@ update_player:
   adc #>PLAYER_SPEED  ; Add speed
   sta player_y+1      ; Set player Y
 +
-  bbr2 p1_state,+     ; Gamepad Left?
+  lda p1_state        ; Load player 1 gamepad
+  and #PAD_LEFT       ; Test dpad left
+  beq +               ; Skip if button not held
   sec                 ; Setup subtraction
   lda player_x        ; Get player X subpixel
   sbc #<PLAYER_SPEED  ; Subtract subpixel speed
@@ -47,7 +53,9 @@ update_player:
   sbc #>PLAYER_SPEED  ; Subtract speed
   sta player_x+1      ; Set player X
 +
-  bbr3 p1_state,+     ; Gamepad Right?
+  lda p1_state        ; Load player 1 gamepad
+  and #PAD_RIGHT      ; Test dpad right
+  beq +               ; Skip if button not held
   clc                 ; Setup addition
   lda player_x        ; Get player X subpixel
   adc #<PLAYER_SPEED  ; Add subpixel speed

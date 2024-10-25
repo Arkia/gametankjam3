@@ -13,10 +13,10 @@
   temp  dsb 4
 .ENDS
 
-.DEFINE PAD_UP    %00000001
-.DEFINE PAD_DOWN  %00000010
-.DEFINE PAD_LEFT  %00000100
-.DEFINE PAD_RIGHT %00001000
+.DEFINE PAD_UP    %00001000
+.DEFINE PAD_DOWN  %00000100
+.DEFINE PAD_LEFT  %00000010
+.DEFINE PAD_RIGHT %00000001
 .DEFINE PAD_B     %00010000
 .DEFINE PAD_C     %00100000
 .DEFINE PAD_A     %01000000
@@ -96,9 +96,6 @@ reset:
   sta DMA_FLAGS   ; Set blitter flags
   sta dma_flags   ; Update mirror
   cli
-
-  jsr draw_game_scene
-  jsr display_flip
   
 main_loop:
   jsr update_input            ; Read controllers
