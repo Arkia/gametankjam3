@@ -11,7 +11,7 @@
 int main(int argc, char **argv) {
   char *input_file_name;
   char *output_file_name;
-  
+
   printf("Converting Image...\n");
   
   if (argc < 2) {

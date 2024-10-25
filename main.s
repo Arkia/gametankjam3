@@ -102,7 +102,8 @@ reset:
   sta DMA_WIDTH
   sta DMA_HEIGHT
   stz DMA_GX
-  stz DMA_GY
+  lda #48
+  sta DMA_GY
   lda #1
   sta DMA_START
   wai
@@ -276,7 +277,7 @@ nmi:
 
 .SECTION "ImageData" BANK 0 SLOT 3
 test_image:
-  .INCBIN "data/player.bin"
+  .INCBIN "data/page0.bin"
 .ENDS
 
 .SECTION "ACPImport" BANK 0 SLOT 3
