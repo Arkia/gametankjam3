@@ -146,7 +146,7 @@ quadrant_gy_table:
 wait_frame:
   lda frame_count             ; Load current frame counter
 -
-  ;wai                         ; Wait for interrupt
+  wai                         ; Wait for interrupt
   cmp frame_count             ; Compare to frame counter
   beq -                       ; If counter hasn't changed, keep waiting
   rts                         ; Return
