@@ -34,14 +34,15 @@ spawn_test_enemy:
   bne +
   rts                         ; If not, do nothing
 +
-  stz enemy_x_lo,x
-  stz enemy_y_lo,x
-  stz enemy_sprite,x
-  stz enemy_state,x
+  inc enemy_count
+  stz enemy_x_lo.w,x
+  stz enemy_y_lo.w,x
+  stz enemy_sprite.w,x
+  stz enemy_state.w,x
   lda #112
-  sta enemy_x_hi,x
+  sta enemy_x_hi.w,x
   lda #16
-  sta enemy_y_hi,x
+  sta enemy_y_hi.w,x
 
 update_enemies:
   ldx #0                      ; Start at index 0
@@ -85,7 +86,7 @@ call_enemy_state:
   rts                         ; Jump to routine
 
 e_dummy_state:
-  inc enemy_y_hi,x
+  inc enemy_y_hi.w,x
   rts
 
 enemy_func_lo:
@@ -101,18 +102,18 @@ draw_enemies:
   rts                         ; If so, return
 +
 @loop
-  ldy enemy_sprite,x          ; Get sprite id
-  lda e_sprite_gx,y           ; Get sprite GX
+  ldy enemy_sprite.w,x        ; Get sprite id
+  lda e_sprite_gx.w,y         ; Get sprite GX
   sta DMA_GX                  ; Set blit GX
-  lda e_sprite_gy,y           ; Get sprite GY
+  lda e_sprite_gy.w,y         ; Get sprite GY
   sta DMA_GY                  ; Set blit GY
-  lda e_sprite_w,y            ; Get sprite width
+  lda e_sprite_w.w,y          ; Get sprite width
   sta DMA_WIDTH               ; Set blit width
-  lda e_sprite_h,y            ; Get sprite height
+  lda e_sprite_h.w,y          ; Get sprite height
   sta DMA_HEIGHT              ; Set blit height
-  lda enemy_x_hi,x            ; Get enemy X position
+  lda enemy_x_hi.w,x          ; Get enemy X position
   sta DMA_VX                  ; Set blit X
-  lda enemy_y_hi,x            ; Get enemy Y position
+  lda enemy_y_hi.w,x          ; Get enemy Y position
   sta DMA_VY                  ; Set blit Y
   lda #1                      ; Blit start command
   sta DMA_START               ; Do blit
@@ -120,6 +121,18 @@ draw_enemies:
   dex                         ; Next enemy
   bpl @loop                   ; Loop
   rts
+
+e_sprite_gx:
+  .DB 0
+
+e_sprite_gy:
+  .DB 40
+
+e_sprite_w:
+  .DB 9
+
+e_sprite_h:
+  .DB 9
 
 update_pshots:
   ldx #0                      ; Start at index 0

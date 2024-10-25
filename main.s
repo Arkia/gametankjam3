@@ -85,7 +85,8 @@ main_loop:
   jsr clear_screen            ; Clear screen
   jsr update_input            ; Read controllers
   jsr update_player           ; Move player
-  jsr update_pshots
+  jsr update_enemies          ; Move enemies
+  jsr update_pshots           ; Move player projectiles
   jsr draw_game               ; Draw objects
   jsr wait_frame              ; Wait for VBLANK
   jsr display_flip            ; Flip display
@@ -145,7 +146,7 @@ quadrant_gy_table:
 wait_frame:
   lda frame_count             ; Load current frame counter
 -
-  wai                         ; Wait for interrupt
+  ;wai                         ; Wait for interrupt
   cmp frame_count             ; Compare to frame counter
   beq -                       ; If counter hasn't changed, keep waiting
   rts                         ; Return
