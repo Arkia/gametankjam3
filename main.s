@@ -40,6 +40,8 @@ reset:
   ; Init Code
   cld
   sei
+  ldx #$FF
+  txs
   stz DMA_FLAGS
   stz dma_flags
   lda #%00111000  ; Clip draws and draw to frame 1
@@ -98,9 +100,11 @@ reset:
   cli
   
 main_loop:
+  lda #~%11011011             ; Clear color
+  jsr clear_screen            ; Clear screen
   jsr update_input            ; Read controllers
   jsr update_player           ; Move player
-  jsr draw_game_scene         ; Draw scene
+  jsr draw_game               ; Draw objects
   jsr wait_frame              ; Wait for VBLANK
   jsr display_flip            ; Flip display
   bra main_loop
@@ -178,6 +182,7 @@ update_input:
 irq:
   stz draw_status             ; Blitter finished
   stz DMA_START               ; Clear interrupt
+  jsr draw_resume             ; Resume pending draw routine
   rti
   
 nmi:

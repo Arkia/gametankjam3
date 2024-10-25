@@ -9,15 +9,13 @@
 
 .SECTION "DrawingRoutines" BANK 1 SLOT 4
 
-draw_game_scene:
+draw_game:
   jsr wait_blitter
-  lda #~%11011011
-  jsr clear_screen
-  jsr draw_level1_bg
   jsr draw_player
   jsr wait_blitter
   lda #$FF
   jsr draw_border
+  jsr wait_blitter
   rts
 
 draw_level1_bg:
@@ -67,15 +65,17 @@ draw_suspend:
 
 ; Resumes a drawing routine previously suspended
 draw_resume:
-  lda draw_proc+1             ; Get second address byte
-  ora draw_proc               ; Combine with first address byte
+  lda draw_proc_addr+1        ; Get second address byte
+  ora draw_proc_addr          ; Combine with first address byte
   bne +                       ; If null address, return
   rts
 +
-  lda draw_proc+1             ; Get second address byte
+  lda draw_proc_addr+1        ; Get second address byte
   pha                         ; Push onto stack
-  lda draw_proc               ; Get first address byte
+  lda draw_proc_addr          ; Get first address byte
   pha                         ; Push onto stack
+  stz draw_proc_addr          ; Clear pending routine address
+  stz draw_proc_addr+1
   lda draw_proc_p             ; Get PSW
   pha                         ; Push onto stack
   lda draw_proc_a             ; Restore A register
@@ -111,7 +111,8 @@ clear_screen:
   sta DMA_VY                  ; Set blit Y
   lda #1                      ; Blit start command
   sta DMA_START               ; Do blit
-  wai                         ; Wait for blitter
+  sta draw_status             ; Flag blitter active
+  jsr draw_suspend            ; Wait for blitter
   dex                         ; Decrement X
   bpl -                       ; Loop
   lda dma_flags               ; Get previous blitter flags
@@ -159,7 +160,11 @@ border_h:
 wait_blitter:
   lda draw_status             ; Get blitter status
   beq +                       ; Return if not blitting
+-
   wai                         ; Wait for blitter
+  lda draw_proc_addr          ; Check for pending draws
+  ora draw_proc_addr+1
+  bne -
 +
   rts
 .ENDS
