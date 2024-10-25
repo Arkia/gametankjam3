@@ -48,6 +48,10 @@ update_player:
   lda player_y+1      ; Get player Y
   sbc #>PLAYER_SPEED  ; Subtract speed
   sta player_y+1      ; Set player Y
+  cmp #16             ; Check if crossed top edge
+  bcs +
+  lda #16             ; Top edge
+  sta player_y+1      ; Set player Y
 +
   lda p1_state        ; Load player 1 gamepad
   and #PAD_DOWN       ; Test dpad down
@@ -58,6 +62,10 @@ update_player:
   sta player_y        ; Set player Y subpixel
   lda player_y+1      ; Get player Y
   adc #>PLAYER_SPEED  ; Add speed
+  sta player_y+1      ; Set player Y
+  cmp #128-24         ; Check if crossed bottom edge
+  bcc +
+  lda #128-24         ; Bottom edge
   sta player_y+1      ; Set player Y
 +
   lda p1_state        ; Load player 1 gamepad
@@ -70,6 +78,8 @@ update_player:
   lda player_x+1      ; Get player X
   sbc #>PLAYER_SPEED  ; Subtract speed
   sta player_x+1      ; Set player X
+  bpl +               ; If crossed left edge of screen
+  stz player_x+1      ; Snap to left edge of screen
 +
   lda p1_state        ; Load player 1 gamepad
   and #PAD_RIGHT      ; Test dpad right
@@ -80,6 +90,10 @@ update_player:
   sta player_x        ; Set player X subpixel
   lda player_x+1      ; Get player X
   adc #>PLAYER_SPEED  ; Add speed
+  sta player_x+1      ; Set player X
+  cmp #128-9          ; Check if crossed right edge
+  bcc +
+  lda #128-9          ; Right edge
   sta player_x+1      ; Set player X
 +
   lda p1_press        ; Get player 1 pressed buttons
