@@ -13,6 +13,15 @@
   temp  dsb 4
 .ENDS
 
+.DEFINE PAD_UP    %00000001
+.DEFINE PAD_DOWN  %00000010
+.DEFINE PAD_LEFT  %00000100
+.DEFINE PAD_RIGHT %00001000
+.DEFINE PAD_B     %00010000
+.DEFINE PAD_C     %00100000
+.DEFINE PAD_A     %01000000
+.DEFINE PAD_START %10000000
+
 .RAMSECTION "Controller" BANK 0 SLOT 0
   p1_state    db
   p2_state    db
@@ -20,13 +29,6 @@
   p2_press    db
   p1_release  db
   p2_release  db
-.ENDS
-
-.DEFINE DRAW_FRAME_DONE   $80
-.DEFINE DRAW_BUFFER_DOWN  $40
-
-.RAMSECTION "DrawEngine" BANK 0 SLOT 0
-  draw_status db
 .ENDS
 
 .RAMSECTION "InterruptVars" BANK 0 SLOT 0
@@ -88,32 +90,22 @@ reset:
   sta dc_output+1
   jsr decompress
   jsr enable_blitter
+  jsr init_player
   
   lda #%01000101  ; Enable blitter and interrupts
   sta DMA_FLAGS   ; Set blitter flags
   sta dma_flags   ; Update mirror
   cli
-  
-  lda #~%11011011
-  jsr clear_screen
-  lda #8
-  sta DMA_VX
-  sta DMA_VY
-  sta DMA_WIDTH
-  sta DMA_HEIGHT
-  stz DMA_GX
-  lda #48
-  sta DMA_GY
-  lda #1
-  sta DMA_START
-  wai
-  lda #$FF
-  jsr draw_border
+
+  jsr draw_game_scene
   jsr display_flip
   
 main_loop:
   jsr update_input            ; Read controllers
+  jsr update_player           ; Move player
+  jsr draw_game_scene         ; Draw scene
   jsr wait_frame              ; Wait for VBLANK
+  jsr display_flip            ; Flip display
   bra main_loop
   
 enable_sprite_ram:
@@ -148,84 +140,6 @@ quadrant_gx_table:
   .DB 0, 128, 0, 128
 quadrant_gy_table:
   .DB 0, 0, 128, 128
-  
-display_flip:
-  lda bank_flags              ; Get current bank state from mirror
-  eor #%00001000              ; Flip framebuffer target
-  sta BANK_FLAGS              ; Set bank state
-  sta bank_flags              ; Set mirror
-  lda dma_flags               ; Get current blitter state
-  eor #%00000010              ; Flip displayed framebuffer
-  sta DMA_FLAGS               ; Set blitter state
-  sta dma_flags               ; Set mirror
-  rts
-  
-clear_screen:
-  sta DMA_COLOR               ; Set draw color
-  lda dma_flags               ; Get current blitter flags
-  ora #%10001000              ; Set opaque and color fill mode
-  sta DMA_FLAGS               ; Set blitter flags
-  lda #64                     ; Rectangle size
-  sta DMA_WIDTH
-  sta DMA_HEIGHT
-  ldx #3                      ; 4 times
--
-  lda clear_pos_x.w,x         ; Get X position of quadrant
-  sta DMA_VX                  ; Set blit X
-  lda clear_pos_y.w,x         ; Get Y position of quadrant
-  sta DMA_VY                  ; Set blit Y
-  lda #1                      ; Blit start command
-  sta DMA_START               ; Do blit
-  wai                         ; Wait for blitter
-  dex                         ; Decrement X
-  bpl -                       ; Loop
-  lda dma_flags               ; Get previous blitter flags
-  sta DMA_FLAGS               ; Restore blitter flags
-  rts
-  
-clear_pos_x:
-  .DB 0, 64, 0, 64
-clear_pos_y:
-  .DB 0, 0, 64, 64
-  
-draw_border:
-  sta DMA_COLOR               ; Set draw color
-  lda dma_flags               ; Get current blitter state
-  ora #%10001000              ; Set opaque and color fill
-  sta DMA_FLAGS               ; Update blitter state
-  ldx #3                      ; 4 times
--
-  lda border_vx.w,x
-  sta DMA_VX
-  lda border_vy.w,x
-  sta DMA_VY
-  lda border_w.w,x
-  sta DMA_WIDTH
-  lda border_h.w,x
-  sta DMA_HEIGHT
-  lda #1
-  sta DMA_START
-  wai
-  dex
-  bpl -
-  lda dma_flags
-  sta DMA_FLAGS
-  rts
-  
-border_vx:
-  .DB 0, 127, 1, 0
-border_vy:
-  .DB 0, 0, 127, 1
-border_w:
-  .DB 127, 1, 127, 1
-border_h:
-  .DB 1, 127, 1, 127
-  
-wait_blitter:
-  bbr0 draw_status,+          ; Return if blitter is done
-  wai                         ; Wait for blitter
-+
-  rts
   
 wait_frame:
   lda frame_count             ; Load current frame counter
@@ -288,6 +202,8 @@ test_image:
 .ENDS
 
 .INCLUDE "decompress.s"
+.INCLUDE "player.s"
+.INCLUDE "drawing.s"
   
 .SECTION "VectorTable" BANK 1 SLOT 4 ORGA $FFFA FORCE
   .DW nmi

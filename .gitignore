@@ -67,3 +67,4 @@ build/*
 test.gtr
 /tools/.vs
 *.gtr
+*.kate-swp
