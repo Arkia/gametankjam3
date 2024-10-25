@@ -82,6 +82,13 @@ update_player:
   adc #>PLAYER_SPEED  ; Add speed
   sta player_x+1      ; Set player X
 +
+  lda p1_press        ; Get player 1 pressed buttons
+  and #PAD_A          ; Test button A
+  beq +               ; Skip if not pressed this frame
+  ldy #0              ; Sound ID 0
+  ldx #0              ; Channel 0
+  jsr play_sound      ; Play SFX
++
   rts                 ; Return
 
 draw_player:

@@ -49,34 +49,9 @@ reset:
   sta bank_flags  ; Update mirror
   
   jsr draw_init
-  
-  lda #$7F        ; Disable ACP
-  sta AUDIO_RATE
-  
-  ldx #0
--
-  lda acp_prog.w,x
-  sta ACP_PROG_START,x
-  inx
-  cpx #acp_size
-  bne -
-  
-  ldx #5
--
-  lda acp_vectors.w,x
-  sta $3FFA,x
-  dex
-  bpl -
-  
-  ldx #VOICE_COUNT-1
--
-  stz VOICE_VOLUME,x
-  dex
-  bpl -
-  
-  stz AUDIO_RESET
+  jsr init_sound
+
   lda #$FF
-  sta AUDIO_RATE
   sta VIA_DDRB
   
   jsr enable_blitter
@@ -93,7 +68,7 @@ reset:
   jsr decompress
   jsr enable_blitter
   jsr init_player
-  
+
   lda #%01000101  ; Enable blitter and interrupts
   sta DMA_FLAGS   ; Set blitter flags
   sta dma_flags   ; Update mirror
@@ -186,7 +161,16 @@ irq:
   rti
   
 nmi:
+  php
+  pha
+  phx
+  phy
   inc frame_count           ; Increment frame counter
+  jsr update_sound
+  ply
+  plx
+  pla
+  plp
   rti
   
 .ENDS
@@ -206,6 +190,7 @@ test_image:
 .INCLUDE "decompress.s"
 .INCLUDE "player.s"
 .INCLUDE "drawing.s"
+.INCLUDE "sound.s"
   
 .SECTION "VectorTable" BANK 1 SLOT 4 ORGA $FFFA FORCE
   .DW nmi
