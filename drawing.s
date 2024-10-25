@@ -32,7 +32,7 @@ draw_level1_bg:
 -
   lda #1                      ; Blit start command
   sta DMA_START               ; Do blit
-  wai                         ; Wait for blit
+  jsr draw_suspend            ; Wait for blit
   lda #8                      ; 8 pixels wide
   sta DMA_WIDTH               ; Set width
   lda #120                    ; Move over 120 pixels

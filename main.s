@@ -42,6 +42,8 @@ reset:
   sei
   ldx #$FF
   txs
+  lda #0
+  jsr set_bank
   stz DMA_FLAGS
   stz dma_flags
   lda #%00111000  ; Clip draws and draw to frame 1
@@ -51,8 +53,10 @@ reset:
   jsr draw_init
   jsr init_sound
 
-  lda #$FF
+  lda #%11111111
   sta VIA_DDRB
+  lda #%00000111
+  sta VIA_DDRA
   
   jsr enable_blitter
   ldx #$0
@@ -83,6 +87,24 @@ main_loop:
   jsr wait_frame              ; Wait for VBLANK
   jsr display_flip            ; Flip display
   bra main_loop
+
+; Select bank A on 2MB Flash Carts
+set_bank:
+  sta temp                    ; Save bank number
+  ldx #8                      ; 8 bits
+-
+  asl temp                    ; Shift left
+  lda #0                      ; Clear A
+  rol                         ; Get bit from Carry flag
+  asl                         ; Shift to position 1 (DATA)
+  sta VIA_ORA                 ; Output with clock low
+  ora #%00000001              ; Set bit 0 high (CLOCK)
+  sta VIA_ORA                 ; Shift DATA bit into register
+  dex                         ; Decrement X
+  bne -                       ; Loop
+  lda #%00000100              ; Set bit 2 (LATCH)
+  sta VIA_ORA                 ; Select bank
+  rts
   
 enable_sprite_ram:
   lda dma_flags
