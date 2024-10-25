@@ -11,6 +11,7 @@
 
 draw_game:
   jsr wait_blitter
+  jsr draw_pshots
   jsr draw_player
   jsr wait_blitter
   lda #$FF

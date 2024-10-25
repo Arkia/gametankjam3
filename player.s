@@ -1,6 +1,7 @@
 .DEFINE PLAYER_SPEED  $0040
 .DEFINE PLAYER_ANIM_SPEED 16
 .DEFINE PLAYER_FRAME_COUNT 8
+.DEFINE PLAYER_SHOT_DELAY 32
 
 .RAMSECTION "Player" BANK 0 SLOT 0
   player_x      dw
@@ -9,11 +10,12 @@
   player_vy     dw
   player_frame  db
   player_atimer db
+  player_stimer db
 .ENDS
 
 .SECTION "PlayerRoutines" BANK 1 SLOT 4
 init_player:
-  ldx #9              ; 10 bytes
+  ldx #11              ; 11 bytes
 -
   stz player_x,x      ; Clear byte
   dex                 ; Decrement X
@@ -38,6 +40,10 @@ update_player:
 +
   sta player_frame          ; Set current frame
 @no_frame_inc
+  lda player_stimer         ; Get shot delay timer
+  beq +                     ; If not zero
+  dec player_stimer         ; Decrement shot delay timer
++
   lda p1_state        ; Load player 1 gamepad
   and #PAD_UP         ; Test dpad up
   beq +               ; Skip if button not held
@@ -96,9 +102,27 @@ update_player:
   lda #128-9          ; Right edge
   sta player_x+1      ; Set player X
 +
-  lda p1_press        ; Get player 1 pressed buttons
+  lda p1_state        ; Get player 1 pressed buttons
   and #PAD_A          ; Test button A
   beq +               ; Skip if not pressed this frame
+  lda player_stimer   ; Get shot delay timer
+  bne +               ; If not zero, skip
+  lda pshot_count     ; Get shot count
+  cmp #PLAYER_SHOT_MAX ; Check for free shots
+  beq +               ; If shot array full, don't fire
+  inc pshot_count     ; Increment shot count
+  tax                 ; Transfer shot index to X
+  lda player_x+1      ; Get player X
+  clc                 ; Setup addition
+  adc #8              ; 8 pixels to the right
+  sta pshot_x_hi.w,x  ; Set shot X
+  stz pshot_x_lo.w,x  ; Clear shot subpixel X
+  lda player_y+1      ; Get player Y
+  clc                 ; Setup addition
+  adc #3              ; 3 pixels down
+  sta pshot_y.w,x     ; Set shot Y
+  lda #PLAYER_SHOT_DELAY
+  sta player_stimer
   ldy #0              ; Sound ID 0
   ldx #0              ; Channel 0
   jsr play_sound      ; Play SFX

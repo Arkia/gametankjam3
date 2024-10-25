@@ -52,6 +52,7 @@ reset:
   
   jsr draw_init
   jsr init_sound
+  jsr init_objects
 
   lda #%11111111
   sta VIA_DDRB
@@ -83,6 +84,7 @@ main_loop:
   jsr clear_screen            ; Clear screen
   jsr update_input            ; Read controllers
   jsr update_player           ; Move player
+  jsr update_pshots
   jsr draw_game               ; Draw objects
   jsr wait_frame              ; Wait for VBLANK
   jsr display_flip            ; Flip display
@@ -213,6 +215,7 @@ test_image:
 .INCLUDE "player.s"
 .INCLUDE "drawing.s"
 .INCLUDE "sound.s"
+.INCLUDE "object.s"
   
 .SECTION "VectorTable" BANK 1 SLOT 4 ORGA $FFFA FORCE
   .DW nmi
