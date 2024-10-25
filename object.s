@@ -87,13 +87,14 @@ call_enemy_state:
 
 e_dummy_state:
   inc enemy_y_hi.w,x
+  clc
   rts
 
 enemy_func_lo:
-  .DB <e_dummy_state
+  .DB <(e_dummy_state-1)
 
 enemy_func_hi:
-  .DB >e_dummy_state
+  .DB >(e_dummy_state-1)
 
 draw_enemies:
   ldx enemy_count             ; Get number of enemies
