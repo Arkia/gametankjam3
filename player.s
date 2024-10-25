@@ -1,15 +1,19 @@
 .DEFINE PLAYER_SPEED  $0040
+.DEFINE PLAYER_ANIM_SPEED 16
+.DEFINE PLAYER_FRAME_COUNT 8
 
 .RAMSECTION "Player" BANK 0 SLOT 0
-  player_x  dw
-  player_y  dw
-  player_vx dw
-  player_vy dw
+  player_x      dw
+  player_y      dw
+  player_vx     dw
+  player_vy     dw
+  player_frame  db
+  player_atimer db
 .ENDS
 
 .SECTION "PlayerRoutines" BANK 1 SLOT 4
 init_player:
-  ldx #7              ; 8 bytes
+  ldx #9              ; 10 bytes
 -
   stz player_x,x      ; Clear byte
   dex                 ; Decrement X
@@ -17,9 +21,23 @@ init_player:
   lda #60             ; Place player at center of screen
   sta player_x+1      ; Set player X
   sta player_y+1      ; Set player Y
+  lda #PLAYER_ANIM_SPEED
+  sta player_atimer
   rts                 ; Return
 
 update_player:
+  dec player_atimer         ; Decrement animation timer
+  bne @no_frame_inc         ; If not zero, don't increment frame
+  lda #PLAYER_ANIM_SPEED    ; Load animation delay
+  sta player_atimer         ; Reset animation timer
+  lda player_frame          ; Get current frame
+  ina                       ; Increment
+  cmp #PLAYER_FRAME_COUNT   ; Check animation bound
+  bne +                     ; If at end of animation
+  lda #0                    ; Reset to frame 0
++
+  sta player_frame          ; Set current frame
+@no_frame_inc
   lda p1_state        ; Load player 1 gamepad
   and #PAD_UP         ; Test dpad up
   beq +               ; Skip if button not held
@@ -71,7 +89,8 @@ draw_player:
   sta DMA_VX          ; Set blit X
   lda player_y+1      ; Get player Y
   sta DMA_VY          ; Set blit Y
-  lda #0              ; Get frame X
+  ldx player_frame    ; Get current frame
+  lda player_frame_gx.w,x
   sta DMA_GX          ; Set blit source X
   lda #48             ; Frame Y
   sta DMA_GY          ; Set blit source Y
@@ -82,5 +101,9 @@ draw_player:
   sta DMA_START       ; Draw sprite
   sta draw_status     ; Flag blitter active
   rts                 ; Return
+
+player_frame_gx:
+  .DB 0, 8, 16, 24, 32, 40, 48, 56
+
 .ENDS
 
