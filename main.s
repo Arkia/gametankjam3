@@ -53,6 +53,7 @@ reset:
   jsr draw_init
   jsr init_sound
   jsr init_objects
+  jsr spawn_test_enemy
 
   lda #%11111111
   sta VIA_DDRB
