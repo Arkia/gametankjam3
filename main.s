@@ -185,7 +185,6 @@ irq:
   rti
   
 nmi:
-  php
   pha
   phx
   phy
@@ -194,7 +193,6 @@ nmi:
   ply
   plx
   pla
-  plp
   rti
   
 .ENDS
