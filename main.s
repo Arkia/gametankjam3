@@ -46,7 +46,7 @@ reset:
   sta BANK_FLAGS  ; Reset bank settings
   sta bank_flags  ; Update mirror
   
-  stz draw_status
+  jsr draw_init
   
   lda #$7F        ; Disable ACP
   sta AUDIO_RATE

@@ -1,17 +1,88 @@
 .RAMSECTION "DrawEngine" BANK 0 SLOT 0
-  draw_status db
+  draw_proc_addr  dw
+  draw_proc_a     db
+  draw_proc_x     db
+  draw_proc_y     db
+  draw_proc_p     db
+  draw_status     db
 .ENDS
 
 .SECTION "DrawingRoutines" BANK 1 SLOT 4
+
 draw_game_scene:
   jsr wait_blitter
   lda #~%11011011
   jsr clear_screen
+  jsr draw_level1_bg
   jsr draw_player
   jsr wait_blitter
   lda #$FF
   jsr draw_border
   rts
+
+draw_level1_bg:
+  lda #112                    ; Background GX
+  sta DMA_GX                  ; Set GX
+  stz DMA_GY                  ; Set GY to 0
+  stz DMA_VX                  ; Set VX to 0
+  stz DMA_VY                  ; Set VY to 0
+  lda #120                    ; 120 pixels wide
+  sta DMA_WIDTH               ; Set width
+  lda #16                     ; 16 pixel tall rows
+  sta DMA_HEIGHT              ; Set height
+  ldx #3                      ; 3 rows
+-
+  lda #1                      ; Blit start command
+  sta DMA_START               ; Do blit
+  wai                         ; Wait for blit
+  lda #8                      ; 8 pixels wide
+  sta DMA_WIDTH               ; Set width
+  lda #120                    ; Move over 120 pixels
+  sta DMA_VX                  ; Set VX
+  lda #1                      ; Blit start command
+  sta DMA_START               ; Do blit
+  wai                         ; Wait for blit
+
+  rts
+
+draw_init:
+  stz draw_status             ; Clear blit active
+  stz draw_proc_addr          ; Clear current draw address
+  stz draw_proc_addr+1
+  rts                         ; Return
+
+; Suspends the current drawing routine until the blitter triggers IRQ
+draw_suspend:
+  sta draw_proc_a             ; Save A register
+  stx draw_proc_x             ; Save X register
+  sty draw_proc_y             ; Save Y register
+  php                         ; Push PSW
+  pla                         ; Get PSW into A
+  sta draw_proc_p             ; Save PSW
+  pla                         ; Get first address byte
+  sta draw_proc_addr          ; Store in draw pointer
+  pla                         ; Get second address byte
+  sta draw_proc_addr+1        ; Store in draw pointer
+  rts                         ; Return from draw routine
+
+; Resumes a drawing routine previously suspended
+draw_resume:
+  lda draw_proc+1             ; Get second address byte
+  ora draw_proc               ; Combine with first address byte
+  bne +                       ; If null address, return
+  rts
++
+  lda draw_proc+1             ; Get second address byte
+  pha                         ; Push onto stack
+  lda draw_proc               ; Get first address byte
+  pha                         ; Push onto stack
+  lda draw_proc_p             ; Get PSW
+  pha                         ; Push onto stack
+  lda draw_proc_a             ; Restore A register
+  ldx draw_proc_x             ; Restore X register
+  ldy draw_proc_y             ; Restore Y register
+  plp                         ; Restore PSW
+  rts                         ; Resume draw routine
 
 display_flip:
   lda bank_flags              ; Get current bank state from mirror
