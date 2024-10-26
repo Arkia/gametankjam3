@@ -1,3 +1,14 @@
+.DEFINE E_WAIT        $00
+.DEFINE E_HOVER       $01
+.DEFINE E_MOVE        $02
+.DEFINE E_SINE        $03
+.DEFINE E_FIRE        $04
+.DEFINE E_AIM_FIRE    $05
+.DEFINE E_ANIM        $06
+.DEFINE E_TRIGGER     $07
+.DEFINE E_SPAWN       $08
+.DEFINE E_DELETE      $09
+
 .DEFINE PLAYER_SHOT_MAX   16
 .DEFINE PLAYER_SHOT_SPEED $0200
 
@@ -8,13 +19,23 @@
   pshot_x_hi    dsb PLAYER_SHOT_MAX
   pshot_y       dsb PLAYER_SHOT_MAX
 
+  enemy_id      dsb ENEMY_MAX
+  enemy_pc      dsb ENEMY_MAX
   enemy_x_lo    dsb ENEMY_MAX
   enemy_x_hi    dsb ENEMY_MAX
   enemy_y_lo    dsb ENEMY_MAX
   enemy_y_hi    dsb ENEMY_MAX
+  enemy_vx_lo   dsb ENEMY_MAX
+  enemy_vx_hi   dsb ENEMY_MAX
+  enemy_vy_lo   dsb ENEMY_MAX
+  enemy_vy_hi   dsb ENEMY_MAX
   enemy_state   dsb ENEMY_MAX
   enemy_timer   dsb ENEMY_MAX
-  enemy_sprite  dsb ENEMY_MAX
+  enemy_frame   dsb ENEMY_MAX
+  enemy_anim    dsb ENEMY_MAX
+  enemy_atimer  dsb ENEMY_MAX
+  enemy_misc0   dsb ENEMY_MAX
+  enemy_misc1   dsb ENEMY_MAX
 .ENDS
 
 .RAMSECTION "ObjectCounts" BANK 0 SLOT "ZeroPage"
@@ -45,14 +66,185 @@ spawn_test_enemy:
   rts                         ; If not, do nothing
 +
   inc enemy_count
+  stz enemy_id.w,x
+  stz enemy_pc.w,x
   stz enemy_x_lo.w,x
   stz enemy_y_lo.w,x
-  stz enemy_sprite.w,x
+  stz enemy_frame.w,x
   stz enemy_state.w,x
   lda #112
   sta enemy_x_hi.w,x
   lda #16
   sta enemy_y_hi.w,x
+  jmp enemy_next_state
+
+enemy_next_state:
+  ldy enemy_id.w,x            ; Get enemy ID
+  lda enemy_script_lo.w,y     ; Get script base pointer
+  sta temp                    ; Store into temp
+  lda enemy_script_hi.w,y
+  sta temp+1
+  ldy enemy_pc.w,x            ; Load script PC
+  lda (temp),y                ; Get state ID
+  iny                         ; Advance PC
+  sta enemy_state.w,x         ; Set next state
+  lda (temp),y                ; Get state timer
+  iny                         ; Advance PC
+  sta enemy_timer.w,x         ; Set timer
+  lda enemy_state.w,x         ; Get state ID
+  phx                         ; Save X
+  tax                         ; Transfer jump index to X
+  lda e_param_jump_hi.w,x
+  pha
+  lda e_param_jump_lo.w,x
+  pha
+  rts
+@move
+  plx
+  jsr enemy_param_vx
+  jsr enemy_param_vy
+  bra @end
+@sine
+  plx
+  jsr enemy_param_vx
+  bra @end
+@fire
+  plx
+  jsr enemy_param_misc
+  jsr enemy_param_vx
+  jsr enemy_param_vy
+  bra @end
+@aimed
+  plx
+  jsr enemy_param_misc
+  bra @end
+@anim
+  plx
+  lda (temp),y
+  iny
+  sta enemy_anim.w,x
+  stz enemy_frame.w,x
+  stz enemy_atimer.w,x
+  bra @end
+@spawn
+  plx
+  lda (temp),y
+  iny
+  sta enemy_vx_lo.w,x
+  lda (temp),y
+  iny
+  sta enemy_vy_lo.w,x
+  bra @end
+@wait
+@hover
+@delete
+@trigger
+  plx
+@end
+  tya
+  sta enemy_pc.w,x            ; Update PC
+  rts                         ; Return
+
+e_param_jump_lo:
+  .DB <(enemy_next_state@wait-1)
+  .DB <(enemy_next_state@hover-1)
+  .DB <(enemy_next_state@move-1)
+  .DB <(enemy_next_state@sine-1)
+  .DB <(enemy_next_state@fire-1)
+  .DB <(enemy_next_state@aimed-1)
+  .DB <(enemy_next_state@anim-1)
+  .DB <(enemy_next_state@trigger-1)
+  .DB <(enemy_next_state@spawn-1)
+  .DB <(enemy_next_state@delete-1)
+
+e_param_jump_hi:
+  .DB >(enemy_next_state@wait-1)
+  .DB >(enemy_next_state@hover-1)
+  .DB >(enemy_next_state@move-1)
+  .DB >(enemy_next_state@sine-1)
+  .DB >(enemy_next_state@fire-1)
+  .DB >(enemy_next_state@aimed-1)
+  .DB >(enemy_next_state@anim-1)
+  .DB >(enemy_next_state@trigger-1)
+  .DB >(enemy_next_state@spawn-1)
+  .DB >(enemy_next_state@delete-1)
+
+enemy_param_misc:
+  lda (temp),y
+  iny
+  sta enemy_misc0.w,x
+  lda (temp),y
+  iny
+  sta enemy_misc1.w,x
+  rts
+
+enemy_param_vx:
+  lda (temp),y                ; Parameter - VX
+  iny                         ; Advance PC
+  sta enemy_vx_lo.w,x         ; Store into subpixel VX
+  stz enemy_vx_hi.w,x         ; Set VX to 0.PARAM
+  bpl +                       ; If PARAM was negative
+  lda #$FF                    ; Sign extend VX
+  sta enemy_vx_hi.w,x
++
+  .REPT 4
+    asl enemy_vx_lo.w,x       ; Shift left 4 times
+    rol enemy_vx_hi.w,x
+  .ENDR
+  rts
+
+enemy_param_vy:
+  lda (temp),y                ; Parameter - VY
+  iny                         ; Advance PC
+  sta enemy_vy_lo.w,x         ; Store into subpixel VY
+  stz enemy_vy_hi.w,x         ; Set VY to 0.PARAM
+  bpl +                       ; If PARAM was negative
+  lda #$FF                    ; Sign extend VY
+  sta enemy_vy_hi.w,x
++
+  .REPT 4
+    asl enemy_vy_lo.w,x       ; Shift left 4 times
+    rol enemy_vy_hi.w,x
+  .ENDR
+  rts
+
+remove_enemy:
+  dec enemy_count             ; Decrement number of enemies
+  ldy enemy_count             ; Index of last enemy in array
+  lda enemy_state.w,y         ; Copy into this enemy slot
+  sta enemy_state.w,x
+  lda enemy_id.w,y
+  sta enemy_id.w,x
+  lda enemy_pc.w,y
+  sta enemy_pc.w,x
+  lda enemy_x_lo.w,y
+  sta enemy_x_lo.w,x
+  lda enemy_x_hi.w,y
+  sta enemy_x_hi.w,x
+  lda enemy_y_lo.w,y
+  sta enemy_y_lo.w,x
+  lda enemy_y_hi.w,y
+  sta enemy_y_hi.w,x
+  lda enemy_vx_lo.w,y
+  sta enemy_vx_lo.w,x
+  lda enemy_vx_hi.w,y
+  sta enemy_vx_hi.w,x
+  lda enemy_vy_lo.w,y
+  sta enemy_vy_lo.w,x
+  lda enemy_vy_hi.w,y
+  sta enemy_vy_hi.w,x
+  lda enemy_timer.w,y
+  sta enemy_timer.w,x
+  lda enemy_frame.w,y
+  sta enemy_frame.w,x
+  lda enemy_anim.w,y
+  sta enemy_anim.w,x
+  lda enemy_atimer.w,y
+  sta enemy_atimer.w,x
+  lda enemy_misc0.w,y
+  sta enemy_misc0.w,x
+  lda enemy_misc1.w,y
+  sta enemy_misc1.w,x
   rts
 
 update_enemies:
@@ -65,25 +257,14 @@ update_enemies:
   bne +                       ; If index is equal to enemy count
   rts                         ; Return
 +
+  dec enemy_timer.w,x         ; Decrement state timer
+  bne +                       ; If timer is zero
+  jsr enemy_next_state        ; Next state
++
   ldy enemy_state.w,x         ; Get enemy state id
   jsr call_enemy_state        ; Call state function
   bcs +                       ; Destroy enemy if carry is clear
-  dec enemy_count             ; Decrement number of enemies
-  ldy enemy_count             ; Index of last enemy in array
-  lda enemy_state.w,y         ; Copy into this enemy slot
-  sta enemy_state.w,x
-  lda enemy_x_lo.w,y
-  sta enemy_x_lo.w,x
-  lda enemy_x_hi.w,y
-  sta enemy_x_hi.w,x
-  lda enemy_y_lo.w,y
-  sta enemy_y_lo.w,x
-  lda enemy_y_hi.w,y
-  sta enemy_y_hi.w,x
-  lda enemy_timer.w,y
-  sta enemy_timer.w,x
-  lda enemy_sprite.w,y
-  sta enemy_sprite.w,x
+  jsr remove_enemy
   bra @loop                   ; Loop
 +
   inx                         ; Next enemy
@@ -135,15 +316,47 @@ enemy_pshot_collision:
   sec                         ; Flag no collision
   rts                         ; Return
 
-e_dummy_state:
-  inc enemy_y_hi.w,x
+e_wait:
   jmp enemy_pshot_collision
+  rts
+
+e_delete:
+  clc
+  rts
 
 enemy_func_lo:
-  .DB <(e_dummy_state-1)
+  .DB <(e_wait-1)
+  .DB <(e_wait-1)
+  .DB <(e_wait-1)
+  .DB <(e_wait-1)
+  .DB <(e_wait-1)
+  .DB <(e_wait-1)
+  .DB <(e_wait-1)
+  .DB <(e_wait-1)
+  .DB <(e_wait-1)
+  .DB <(e_delete-1)
 
 enemy_func_hi:
-  .DB >(e_dummy_state-1)
+  .DB >(e_wait-1)
+  .DB >(e_wait-1)
+  .DB >(e_wait-1)
+  .DB >(e_wait-1)
+  .DB >(e_wait-1)
+  .DB >(e_wait-1)
+  .DB >(e_wait-1)
+  .DB >(e_wait-1)
+  .DB >(e_wait-1)
+  .DB >(e_delete-1)
+
+e_dummy_script:
+  .DB E_WAIT, 120
+  .DB E_DELETE, 0
+
+enemy_script_lo:
+  .DB <e_dummy_script
+
+enemy_script_hi:
+  .DB >e_dummy_script
 
 draw_enemies:
   ldx enemy_count             ; Get number of enemies
@@ -152,7 +365,7 @@ draw_enemies:
   rts                         ; If so, return
 +
 @loop
-  ldy enemy_sprite.w,x        ; Get sprite id
+  ldy enemy_frame.w,x         ; Get sprite id
   lda e_sprite_gx.w,y         ; Get sprite GX
   sta DMA_GX                  ; Set blit GX
   lda e_sprite_gy.w,y         ; Get sprite GY
