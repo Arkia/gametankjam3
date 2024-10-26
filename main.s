@@ -53,6 +53,7 @@ reset:
   jsr draw_init
   jsr init_sound
   jsr init_objects
+  jsr init_level1_bg
   jsr spawn_test_enemy
 
   lda #%11111111
@@ -85,6 +86,8 @@ main_loop:
   jsr clear_screen            ; Clear screen
   jsr update_input            ; Read controllers
   jsr update_player           ; Move player
+  jsr wait_blitter            ; Wait for clear screen to finish
+  jsr draw_level1_bg          ; Draw level background
   jsr update_enemies          ; Move enemies
   jsr update_pshots           ; Move player projectiles
   jsr draw_game               ; Draw objects

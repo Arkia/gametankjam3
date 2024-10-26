@@ -67,7 +67,7 @@ update_enemies:
 +
   ldy enemy_state.w,x         ; Get enemy state id
   jsr call_enemy_state        ; Call state function
-  bcc +                       ; Destroy enemy if carry is set
+  bcs +                       ; Destroy enemy if carry is clear
   dec enemy_count             ; Decrement number of enemies
   ldy enemy_count             ; Index of last enemy in array
   lda enemy_state.w,y         ; Copy into this enemy slot
@@ -96,10 +96,48 @@ call_enemy_state:
   pha                         ; Push onto stack
   rts                         ; Jump to routine
 
+enemy_pshot_collision:
+  lda enemy_x_hi.w,x          ; Get enemy X
+  ina                         ; Offset
+  ina
+  sta b_x                     ; Set B.X
+  lda enemy_y_hi.w,x          ; Get enemy Y
+  ina                         ; Offset
+  ina
+  sta b_y                     ; Set B.Y
+  lda #4+2                    ; Combined sizes of enemy and pshot
+  sta size_x                  ; Set aabb widths
+  sta size_y                  ; Set aabb heights
+  ldy #0                      ; Set Y to first Player Shot
+-
+  cpy pshot_count             ; Test with player shot count
+  bcc +                       ; If pshot index is greater than count
+  bra @no_collision           ; End of list
++
+  bne +                       ; If pshot index is equal to count
+  bra @no_collision           ; End of list
++
+  lda pshot_x_hi.w,y          ; Get player shot X
+  sta a_x                     ; Set A.X
+  lda pshot_y.w,y             ; Get player shot Y
+  sta a_y                     ; Set A.Y
+  jsr test_collision          ; Check collision
+  bcs +                       ; Skip if no collision
+  phx                         ; Save X
+  tya                         ; Move pshot index to A
+  tax                         ; Move to X
+  jsr remove_pshot            ; Delete shot collided with
+  plx                         ; Restore X
+  clc                         ; Flag collision
+  rts                         ; Return
++
+@no_collision
+  sec                         ; Flag no collision
+  rts                         ; Return
+
 e_dummy_state:
   inc enemy_y_hi.w,x
-  clc
-  rts
+  jmp enemy_pshot_collision
 
 enemy_func_lo:
   .DB <(e_dummy_state-1)

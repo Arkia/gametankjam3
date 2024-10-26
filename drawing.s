@@ -5,9 +5,24 @@
   draw_proc_y     db
   draw_proc_p     db
   draw_status     db
+  draw_data       dsb 8
+.ENDS
+
+.DEFINE L1_SCROLL_DELAY 2
+
+.RAMSECTION "Scrolling" BANK 0 SLOT 0
+  bg_scroll_x     db
+  bg_scroll_timer db
 .ENDS
 
 .SECTION "DrawingRoutines" BANK 1 SLOT 4
+
+init_level1_bg:
+  lda #8
+  sta bg_scroll_x
+  lda #L1_SCROLL_DELAY
+  sta bg_scroll_timer
+  rts
 
 draw_game:
   jsr wait_blitter
@@ -21,27 +36,54 @@ draw_game:
   rts
 
 draw_level1_bg:
+  dec bg_scroll_timer         ; Decrement scroll timer
+  bne +                       ; If timer is 0
+  lda #L1_SCROLL_DELAY        ; Reset scroll timer
+  sta bg_scroll_timer         ; Set scroll timer
+  dec bg_scroll_x             ; Decrement scroll X
+  bne +                       ; If scroll to 0
+  lda #8                      ; Reset to 8
+  sta bg_scroll_x             ; Set scroll X
++
   lda #112                    ; Background GX
   sta DMA_GX                  ; Set GX
   stz DMA_GY                  ; Set GY to 0
-  stz DMA_VX                  ; Set VX to 0
   stz DMA_VY                  ; Set VY to 0
-  lda #120                    ; 120 pixels wide
-  sta DMA_WIDTH               ; Set width
+  clc                         ; Setup addition
+  lda bg_scroll_x             ; Get scroll X
+  adc #-8                     ; Offset
+  sta DMA_VX                  ; Set VX
+  sta draw_data               ; Save VX
+  stz draw_data+1             ; Save VY
   lda #16                     ; 16 pixel tall rows
   sta DMA_HEIGHT              ; Set height
   ldx #3                      ; 3 rows
 -
+  lda #120                    ; 120 pixels wide
+  sta DMA_WIDTH               ; Set width
   lda #1                      ; Blit start command
   sta DMA_START               ; Do blit
-  jsr draw_suspend            ; Wait for blit
-  lda #8                      ; 8 pixels wide
+  inc draw_status             ; Flag blitter active
+  jsr wait_blitter            ; Wait for blitter
+  lda #16                     ; 8 pixels wide
   sta DMA_WIDTH               ; Set width
-  lda #120                    ; Move over 120 pixels
+  clc                         ; Setup addition
+  lda draw_data               ; Load VX
+  adc #120                    ; Move 120 pixels right
   sta DMA_VX                  ; Set VX
   lda #1                      ; Blit start command
   sta DMA_START               ; Do blit
   wai                         ; Wait for blit
+  lda draw_data               ; Load old VX
+  sta DMA_VX                  ; Set VX
+  clc                         ; Setup addition
+  lda draw_data+1             ; Load VY
+  adc #16                     ; Add 16 pixels
+  sta draw_data+1             ; Save position
+  sta DMA_VY                  ; Set VY
+  sta DMA_GY                  ; Set GY
+  dex                         ; Decrement row count
+  bne -                       ; Loop
 
   rts
 
