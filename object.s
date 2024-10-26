@@ -22,7 +22,17 @@
   enemy_count   db
 .ENDS
 
+.RAMSECTION "CollisionVars" BANK 0 SLOT "ZeroPage"
+  a_x           db
+  a_y           db
+  b_x           db
+  b_y           db
+  size_x        db
+  size_y        db
+.ENDS
+
 .SECTION "ObjectRoutines" BANK 1 SLOT "FixedROM"
+
 init_objects:
   stz pshot_count
   stz enemy_count
@@ -43,6 +53,7 @@ spawn_test_enemy:
   sta enemy_x_hi.w,x
   lda #16
   sta enemy_y_hi.w,x
+  rts
 
 update_enemies:
   ldx #0                      ; Start at index 0
@@ -135,6 +146,17 @@ e_sprite_w:
 e_sprite_h:
   .DB 9
 
+remove_pshot:
+  dec pshot_count             ; Decrement shot count
+  ldy pshot_count             ; Load shot count as index
+  lda pshot_x_lo.w,y          ; Swap current shot with last shot
+  sta pshot_x_lo.w,x
+  lda pshot_x_hi.w,y
+  sta pshot_x_hi.w,x
+  lda pshot_y.w,y
+  sta pshot_y.w,x
+  rts
+
 update_pshots:
   ldx #0                      ; Start at index 0
 @loop
@@ -153,14 +175,7 @@ update_pshots:
   adc pshot_x_hi.w,x          ; Add to X
   sta pshot_x_hi.w,x          ; Update X
   bpl +                       ; Test if off screen
-  dec pshot_count             ; Decrement shot count
-  ldy pshot_count             ; Load shot count as index
-  lda pshot_x_lo.w,y          ; Swap current shot with last shot
-  sta pshot_x_lo.w,x
-  lda pshot_x_hi.w,y
-  sta pshot_x_hi.w,x
-  lda pshot_y.w,y
-  sta pshot_y.w,x
+  jsr remove_pshot            ; Delete shot
   bra @loop                   ; Loop
 +
   inx                         ; Next shot
@@ -191,5 +206,31 @@ draw_pshots:
   dex                         ; Next shot index
   bpl -                       ; Loop
   rts                         ; Return
+
+; Sets C if no collision between objects where
+; a_x, a_y is the center of object A and
+; b_x, b_y is an offset center of object B
+; size_x, size_y are the combined half sizes of the aabb's
+test_collision:
+  sec                         ; Setup subtraction
+  lda a_x                     ; Load A.X
+  sbc b_x                     ; Subtract B.X
+  bpl +                       ; Take absolute value if negative
+  eor #$FF                    ; Invert
+  ina                         ; Add 1 for two's compliment
++
+  cmp size_x                  ; Test against combined aabb half widths
+  bcc +                       ; If dx is greater than size x
+  rts                         ; No collision
++
+  sec                         ; Setup subtraction
+  lda a_y                     ; Load A.Y
+  sbc b_y                     ; Subtract B.Y
+  bpl +                       ; Take absolute value if negative
+  eor #$FF                    ; Invert
+  ina                         ; Add 1 for two's compliment
++
+  cmp size_y                  ; Test against combined aabb half heights
+  rts                         ; Return result
 
 .ENDS
