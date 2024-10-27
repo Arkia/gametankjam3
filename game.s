@@ -28,6 +28,11 @@ init_game:
   lda #ASC('0')
   sta str_lives.w+3
   sta str_score.w+5
+  jsr init_player
+  jsr init_objects
+  ldx #0
+  jsr init_level
+  jsr init_level1_bg
   rts
 
 update_game:

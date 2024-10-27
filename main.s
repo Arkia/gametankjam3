@@ -76,10 +76,6 @@ reset:
   
   jsr draw_init
   jsr init_sound
-  jsr init_objects
-  ldx #0
-  jsr init_level
-  jsr init_level1_bg
 
   lda #%11111111
   sta VIA_DDRB
@@ -100,7 +96,6 @@ reset:
   jsr decompress
   jsr load_font
   jsr init_game
-  jsr init_player
 
   lda #%01010101  ; Enable blitter and interrupts and carry
   sta DMA_FLAGS   ; Set blitter flags
