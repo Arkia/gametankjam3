@@ -43,7 +43,7 @@ MAP 'f'        = 43
   p2_release  db
 .ENDS
 
-.ENUMID 0 STEP 2
+.ENUMID 0
 .ENUMID STATE_TITLE
 .ENUMID STATE_GAME
 .ENUMID STATE_WIN
@@ -95,21 +95,44 @@ reset:
   sta dc_output+1
   jsr decompress
   jsr load_font
-  jsr init_game
 
   lda #%01010101  ; Enable blitter and interrupts and carry
   sta DMA_FLAGS   ; Set blitter flags
   sta dma_flags   ; Update mirror
   cli
+
+  lda #STATE_GAME
+  sta next_state
   
 main_loop:
   lda #~%11011011             ; Clear color
   jsr clear_screen            ; Clear screen
   jsr update_input            ; Read controllers
-  jsr update_game             ; Run game update
+  lda next_state              ; Check for new state
+  bmi +                       ; If not $FF
+  sta current_state           ; Change state
+  tax                         ; Move to index X
+  lda state_init_lo.w,x       ; Get init pointer low
+  sta temp                    ; Store into temp pointer
+  lda state_init_hi.w,x       ; Get init poitner high
+  sta temp+1                  ; Store into temp pointer
+  jsr call_temp               ; Call state init routine
+  lda #STATE_NULL             ; No state
+  sta next_state              ; Clear next state
++
+  lda current_state           ; Get current state
+  tax                         ; Move to index X
+  lda state_update_lo.w,x     ; Get update pointer low
+  sta temp                    ; Store into temp pointer
+  lda state_update_hi.w,x     ; Get update pointer high
+  sta temp+1                  ; Store into temp pointer
+  jsr call_temp               ; Call state update routine
   jsr wait_frame              ; Wait for VBLANK
   jsr display_flip            ; Flip display
   bra main_loop
+
+call_temp:
+  jmp (temp)
 
 ; Select bank A on 2MB Flash Carts
 set_bank:
