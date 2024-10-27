@@ -30,6 +30,16 @@ init_game:
   sta str_score.w+5
   rts
 
+update_game:
+  jsr update_player           ; Move player
+  jsr update_level            ; Spawn enemies
+  jsr wait_blitter            ; Wait for clear screen to finish
+  jsr draw_level1_bg          ; Draw level background
+  jsr update_enemies          ; Move enemies
+  jsr update_pshots           ; Move player projectiles
+  jsr update_status_bar       ; Print lives/score strings
+  jmp draw_game               ; Draw objects
+
 update_status_bar:
   lda #<(str_lives+2)
   sta bcd_write

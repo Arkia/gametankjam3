@@ -43,6 +43,18 @@ MAP 'f'        = 43
   p2_release  db
 .ENDS
 
+.ENUMID 0 STEP 2
+.ENUMID STATE_TITLE
+.ENUMID STATE_GAME
+.ENUMID STATE_WIN
+.ENUMID STATE_LOSE
+.DEFINE STATE_NULL    $FF
+
+.RAMSECTION "MainState" BANK 0 SLOT 0
+  current_state   db
+  next_state      db
+.ENDS
+
 .RAMSECTION "InterruptVars" BANK 0 SLOT 0
   frame_count     db
 .ENDS
@@ -99,14 +111,7 @@ main_loop:
   lda #~%11011011             ; Clear color
   jsr clear_screen            ; Clear screen
   jsr update_input            ; Read controllers
-  jsr update_player           ; Move player
-  jsr update_level            ; Spawn enemies
-  jsr wait_blitter            ; Wait for clear screen to finish
-  jsr draw_level1_bg          ; Draw level background
-  jsr update_enemies          ; Move enemies
-  jsr update_pshots           ; Move player projectiles
-  jsr update_status_bar
-  jsr draw_game               ; Draw objects
+  jsr update_game             ; Run game update
   jsr wait_frame              ; Wait for VBLANK
   jsr display_flip            ; Flip display
   bra main_loop
@@ -236,6 +241,21 @@ test_image:
 .INCLUDE "object.s"
 .INCLUDE "level.s"
 .INCLUDE "game.s"
+
+.SECTION "StateTable" BANK 1 SLOT 4
+  state_init_lo:
+    .DB 0
+    .DB <init_game
+  state_init_hi:
+    .DB 0
+    .DB >init_game
+  state_update_lo:
+    .DB 0
+    .DB <update_game
+  state_update_hi:
+    .DB 0
+    .DB >update_game
+.ENDS
   
 .SECTION "VectorTable" BANK 1 SLOT 4 ORGA $FFFA FORCE
   .DW nmi
