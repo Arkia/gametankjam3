@@ -24,6 +24,22 @@ init_level1_bg:
   sta bg_scroll_timer
   rts
 
+load_font:
+  jsr enable_blitter                  ; Turn on blitter
+  ldx #1                              ; Quadrant 1 (128,0)
+  jsr set_sprite_quadrant             ; Make active quadrant
+  jsr enable_sprite_ram               ; Map sprite RAM
+  lda #<font_image                    ; Load font pointer low
+  sta dc_input                        ; Set decompression input pointer low
+  lda #>font_image                    ; Load font pointer hight
+  sta dc_input+1                      ; Set decompression input pointer high
+  stz dc_output                       ; Set output pointer low
+  lda #$40                            ; Start of VRAM
+  sta dc_output+1                     ; Set output pointer high
+  jsr decompress                      ; Load image data
+  jsr enable_blitter                  ; Turn blitter back on
+  rts
+
 draw_game:
   jsr wait_blitter
   jsr draw_enemies
@@ -211,4 +227,36 @@ wait_blitter:
   bne -
 +
   rts
+.ENDS
+
+.SECTION "FontData" BANK 0 SLOT "BankROM"
+font_image:
+  .INCBIN "data/font_page.bin"
+
+font_gx:
+  .REPT 25 INDEX I
+    .DB 128+5*I
+  .ENDR
+  .REPT 12 INDEX I
+    .DB 128+5*I
+  .ENDR
+  .DB 60
+  .DB 62
+  .DB 64
+  .DB 65
+font_gy:
+  .REPT 25
+    .DB 0
+  .ENDR
+  .REPT 16
+    .DB 7
+  .ENDR
+font_w:
+  .REPT 37
+    .DB 5
+  .ENDR
+  .DB 2
+  .DB 2
+  .DB 1
+  .DB 1
 .ENDS

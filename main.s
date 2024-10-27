@@ -1,6 +1,15 @@
 .INCLUDE "gametank_cpu.i"
 .INCLUDE "acp/acp.i"
 
+.ASCIITABLE
+MAP '0' TO '9' = 1
+MAP 'A' TO 'Z' = 11
+MAP '?'        = 37
+MAP '(' TO ')' = 38
+MAP '!'        = 40
+MAP '.'        = 41
+.ENDA
+
 .ROMBANKSIZE $4000
 .ROMBANKS 2
 
@@ -74,7 +83,7 @@ reset:
   lda #$40
   sta dc_output+1
   jsr decompress
-  jsr enable_blitter
+  jsr load_font
   jsr init_player
 
   lda #%01000101  ; Enable blitter and interrupts
