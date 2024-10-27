@@ -105,6 +105,7 @@ main_loop:
   jsr draw_level1_bg          ; Draw level background
   jsr update_enemies          ; Move enemies
   jsr update_pshots           ; Move player projectiles
+  jsr update_status_bar
   jsr draw_game               ; Draw objects
   jsr wait_frame              ; Wait for VBLANK
   jsr display_flip            ; Flip display
