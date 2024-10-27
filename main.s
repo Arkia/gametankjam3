@@ -87,6 +87,7 @@ reset:
   sta dc_output+1
   jsr decompress
   jsr load_font
+  jsr init_game
   jsr init_player
 
   lda #%01010101  ; Enable blitter and interrupts and carry
@@ -233,6 +234,7 @@ test_image:
 .INCLUDE "sound.s"
 .INCLUDE "object.s"
 .INCLUDE "level.s"
+.INCLUDE "game.s"
   
 .SECTION "VectorTable" BANK 1 SLOT 4 ORGA $FFFA FORCE
   .DW nmi

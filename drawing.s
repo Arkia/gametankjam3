@@ -107,17 +107,22 @@ draw_status_bar:
   sta draw_data+3
   lda #8                      ; Print Y
   sta draw_data+4
-  lda #<test_string           ; String pointer low
+  lda #<str_lives             ; String pointer low
   sta draw_data
-  lda #>test_string           ; String pointer high
+  lda #>str_lives             ; String pointer high
   sta draw_data+1
-  lda #_sizeof_test_string    ; String length
+  lda #4                      ; String length
   sta draw_data+2
-  jmp draw_string             ; Print to screen
-  rts
-
-test_string:
-  .ASC "LMNOPQRSTUVWXYZ?()!.xf"
+  jsr draw_string             ; Print to screen
+  lda #91
+  sta draw_data+3
+  lda #<str_score
+  sta draw_data
+  lda #>str_score
+  sta draw_data+1
+  lda #6
+  sta draw_data+2
+  jmp draw_string
 
 draw_game:
   jsr wait_blitter
