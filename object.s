@@ -59,6 +59,21 @@ init_objects:
   stz enemy_count
   rts
 
+; Create an object of type A and return index in X
+spawn_object:
+  ldx enemy_count             ; Get next enemy
+  cpx #ENEMY_MAX              ; Check if slot is free
+  bne +
+  ldx #$FF                    ; Set X to -1
+  rts                         ; If not, don't spawn an enemy
++
+  inc enemy_count             ; Increment enemy counter
+  sta enemy_id.w,x            ; Set enemy ID
+  stz enemy_pc.w,x            ; Reset script PC
+  stz enemy_x_lo.w,x          ; Clear subpixel X
+  stz enemy_y_lo.w,x          ; Clear subpixel Y
+  jmp enemy_next_state        ; Set initial state from script
+
 spawn_test_enemy:
   ldx enemy_count             ; Get next enemy index
   cpx #ENEMY_MAX              ; Check if slot free

@@ -53,8 +53,9 @@ reset:
   jsr draw_init
   jsr init_sound
   jsr init_objects
+  ldx #0
+  jsr init_level
   jsr init_level1_bg
-  jsr spawn_test_enemy
 
   lda #%11111111
   sta VIA_DDRB
@@ -86,6 +87,7 @@ main_loop:
   jsr clear_screen            ; Clear screen
   jsr update_input            ; Read controllers
   jsr update_player           ; Move player
+  jsr update_level            ; Spawn enemies
   jsr wait_blitter            ; Wait for clear screen to finish
   jsr draw_level1_bg          ; Draw level background
   jsr update_enemies          ; Move enemies
@@ -218,6 +220,7 @@ test_image:
 .INCLUDE "drawing.s"
 .INCLUDE "sound.s"
 .INCLUDE "object.s"
+.INCLUDE "level.s"
   
 .SECTION "VectorTable" BANK 1 SLOT 4 ORGA $FFFA FORCE
   .DW nmi
