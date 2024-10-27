@@ -2,12 +2,15 @@
 .INCLUDE "acp/acp.i"
 
 .ASCIITABLE
+MAP ' '        = 0
 MAP '0' TO '9' = 1
 MAP 'A' TO 'Z' = 11
 MAP '?'        = 37
 MAP '(' TO ')' = 38
 MAP '!'        = 40
 MAP '.'        = 41
+MAP 'x'        = 42
+MAP 'f'        = 43
 .ENDA
 
 .ROMBANKSIZE $4000
@@ -86,7 +89,7 @@ reset:
   jsr load_font
   jsr init_player
 
-  lda #%01000101  ; Enable blitter and interrupts
+  lda #%01010101  ; Enable blitter and interrupts and carry
   sta DMA_FLAGS   ; Set blitter flags
   sta dma_flags   ; Update mirror
   cli

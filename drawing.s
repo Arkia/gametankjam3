@@ -40,18 +40,101 @@ load_font:
   jsr enable_blitter                  ; Turn blitter back on
   rts
 
+; Draws the string pointed to by draw_data, draw_data+1
+; String length stored in draw_data+2
+; Draw position in draw_data+3, draw_data+4
+; Max string size is 255 chars
+; draw_data+3 will be X position of end of string
+draw_string:
+  lda draw_data+4                     ; Load draw Y
+  sta DMA_VY                          ; Set blit Y
+  lda #7                              ; All font glyphs are 7 pixels tall
+  sta DMA_HEIGHT                      ; Set blit height
+  ldy #0                              ; Set array index to 0
+-
+  cpy draw_data+2                     ; End of string?
+  bne +
+  rts
++
+  lda draw_data+3                     ; Load draw X
+  sta DMA_VX                          ; Set blit X
+  lda (draw_data),y                   ; Get next character
+  bne +                               ; Test for space (0)
+  clc                                 ; Setup addition
+  lda draw_data+3                     ; Get draw X
+  adc #6                              ; Move one space
+  sta draw_data+3                     ; Update draw X
+  iny                                 ; Next character
+  bra -                               ; Loop
++
+  dea                                 ; Offset character ID
+  tax                                 ; Transfer into X
+  lda font_gx.w,x                     ; Load glyph GX
+  sta DMA_GX                          ; Set blit GX
+  lda font_gy.w,x                     ; Load glyph GY
+  sta DMA_GY                          ; Set blit GY
+  lda font_w.w,x                      ; Load glyph width
+  sta DMA_WIDTH                       ; Set blit width
+  clc                                 ; Setup addition
+  adc draw_data+3                     ; Add width to draw X
+  ina                                 ; Add 1 pixel spacing
+  sta draw_data+3                     ; Update draw X
+  lda #1                              ; Blit start command
+  sta DMA_START                       ; Blit glyph
+  wai                                 ; Wait for blitter
+  iny                                 ; Next character
+  bra -                               ; Loop
+
+draw_status_bar:
+  jsr wait_blitter
+  lda dma_flags               ; Get current blitter flags
+  ora #%10001000              ; Set opaque and color fill mode
+  sta DMA_FLAGS               ; Set blitter flags
+  stz DMA_VX                  ; Set blit X
+  stz DMA_VY                  ; Set blit Y
+  lda #127                    ; 127 pixels wide
+  sta DMA_WIDTH
+  lda #16                     ; 16 pixels tall
+  sta DMA_HEIGHT
+  lda #$FF                    ; Full black
+  sta DMA_COLOR
+  lda #1
+  sta DMA_START
+  wai
+  lda dma_flags               ; Get previous blitter flags
+  sta DMA_FLAGS               ; Restore blitter flags
+  lda #2                      ; Print X
+  sta draw_data+3
+  lda #8                      ; Print Y
+  sta draw_data+4
+  lda #<test_string           ; String pointer low
+  sta draw_data
+  lda #>test_string           ; String pointer high
+  sta draw_data+1
+  lda #_sizeof_test_string    ; String length
+  sta draw_data+2
+  jmp draw_string             ; Print to screen
+  rts
+
+test_string:
+  .ASC "LMNOPQRSTUVWXYZ?()!.xf"
+
 draw_game:
   jsr wait_blitter
   jsr draw_enemies
   jsr draw_pshots
   jsr draw_player
   jsr wait_blitter
+  jsr draw_status_bar
   lda #$FF
   jsr draw_border
   jsr wait_blitter
   rts
 
 draw_level1_bg:
+  lda dma_flags               ; Get blitter flags
+  and #%11101111              ; Clear GCARRY
+  sta DMA_FLAGS
   dec bg_scroll_timer         ; Decrement scroll timer
   bne +                       ; If timer is 0
   lda #L1_SCROLL_DELAY        ; Reset scroll timer
@@ -64,13 +147,14 @@ draw_level1_bg:
   lda #112                    ; Background GX
   sta DMA_GX                  ; Set GX
   stz DMA_GY                  ; Set GY to 0
-  stz DMA_VY                  ; Set VY to 0
+  lda #16
+  sta DMA_VY                  ; Set VY to 16
+  sta draw_data+1             ; Save VY
   clc                         ; Setup addition
   lda bg_scroll_x             ; Get scroll X
   adc #-8                     ; Offset
   sta DMA_VX                  ; Set VX
   sta draw_data               ; Save VX
-  stz draw_data+1             ; Save VY
   lda #16                     ; 16 pixel tall rows
   sta DMA_HEIGHT              ; Set height
   ldx #3                      ; 3 rows
@@ -81,7 +165,7 @@ draw_level1_bg:
   sta DMA_START               ; Do blit
   inc draw_status             ; Flag blitter active
   jsr wait_blitter            ; Wait for blitter
-  lda #16                     ; 8 pixels wide
+  lda #16                     ; 16 pixels wide
   sta DMA_WIDTH               ; Set width
   clc                         ; Setup addition
   lda draw_data               ; Load VX
@@ -94,13 +178,14 @@ draw_level1_bg:
   sta DMA_VX                  ; Set VX
   clc                         ; Setup addition
   lda draw_data+1             ; Load VY
+  sta DMA_GY                  ; Set GY
   adc #16                     ; Add 16 pixels
   sta draw_data+1             ; Save position
   sta DMA_VY                  ; Set VY
-  sta DMA_GY                  ; Set GY
   dex                         ; Decrement row count
   bne -                       ; Loop
-
+  lda dma_flags               ; Get old blitter flags
+  sta DMA_FLAGS               ; Restore
   rts
 
 draw_init:
@@ -240,15 +325,17 @@ font_gx:
   .REPT 12 INDEX I
     .DB 128+5*I
   .ENDR
-  .DB 60
-  .DB 62
-  .DB 64
-  .DB 65
+  .DB 128+60
+  .DB 128+62
+  .DB 128+64
+  .DB 128+65
+  .DB 128+66
+  .DB 128+69
 font_gy:
   .REPT 25
     .DB 0
   .ENDR
-  .REPT 16
+  .REPT 18
     .DB 7
   .ENDR
 font_w:
@@ -259,4 +346,6 @@ font_w:
   .DB 2
   .DB 1
   .DB 1
+  .DB 3
+  .DB 6
 .ENDS

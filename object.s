@@ -473,7 +473,7 @@ e_sprite_w:
   .DB 9
 
 e_sprite_h:
-  .DB 9
+  .DB 8
 
 remove_pshot:
   dec pshot_count             ; Decrement shot count
