@@ -40,7 +40,7 @@
   enemy_vy_hi   dsb ENEMY_MAX
   enemy_state   dsb ENEMY_MAX
   enemy_timer   dsb ENEMY_MAX
-  enemy_sprtie  dsb ENEMY_MAX
+  enemy_sprite  dsb ENEMY_MAX
   enemy_frame   dsb ENEMY_MAX
   enemy_anim    dsb ENEMY_MAX
   enemy_atimer  dsb ENEMY_MAX
@@ -139,7 +139,8 @@ enemy_next_state:
   iny
   sta enemy_anim.w,x
   stz enemy_frame.w,x
-  stz enemy_atimer.w,x
+  lda #1
+  sta enemy_atimer.w,x
   bra @end
 @spawn
   plx
@@ -277,6 +278,22 @@ update_enemies:
   bne +                       ; If timer is zero
   jsr enemy_next_state        ; Next state
 +
+  dec enemy_atimer.w,x        ; Decrement animation timer
+  bne ++                      ; If timer is zero
+  ldy enemy_anim.w,x          ; Get animation ID
+  lda anim_speed.w,y          ; Get animation delay
+  sta enemy_atimer.w,x        ; Reset timer
+  lda enemy_frame.w,x         ; Get current frame
+  ina                         ; Increment
+  cmp anim_len.w,y            ; End of animation?
+  bne +
+  lda #0                      ; Reset to frame 0
++
+  sta enemy_frame.w,x         ; Set frame
+  clc                         ; Setup addition
+  adc anim_frame0.w,y         ; Calculate sprite ID
+  sta enemy_sprite.w,x         ; Set sprite
+++
   ldy enemy_state.w,x         ; Get enemy state id
   jsr call_enemy_state        ; Call state function
   bcs +                       ; Destroy enemy if carry is clear
@@ -389,7 +406,7 @@ e_sine:
 
 e_anim:
   jsr enemy_next_state
-  ldy enemy_state,x
+  ldy enemy_state.w,x
   jsr call_enemy_state
   rts
 
@@ -428,7 +445,7 @@ draw_enemies:
   rts                         ; If so, return
 +
 @loop
-  ldy enemy_frame.w,x         ; Get sprite id
+  ldy enemy_sprite.w,x        ; Get sprite id
   lda e_sprite_gx.w,y         ; Get sprite GX
   sta DMA_GX                  ; Set blit GX
   lda e_sprite_gy.w,y         ; Get sprite GY
@@ -539,6 +556,7 @@ test_collision:
 
 .SECTION "ObjectData" BANK 0 SLOT "BankROM"
 e_dummy_script:
+  .DB E_ANIM, 1, 0
   .DB E_MOVE, 16+32, $F0, $00
   .DB E_HOVER, 48+48
   .DB E_SINE, 128, $F0
@@ -551,8 +569,8 @@ enemy_script_hi:
   .DB >e_dummy_script
 
 e_sprite_gx:
-  .REPT 10
-    .DB 0
+  .REPT 10 INDEX I
+    .DB I*9
   .ENDR
 
 e_sprite_gy:
