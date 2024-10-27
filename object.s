@@ -72,7 +72,7 @@ spawn_test_enemy:
   stz enemy_y_lo.w,x
   stz enemy_frame.w,x
   stz enemy_state.w,x
-  lda #112
+  lda #128+16
   sta enemy_x_hi.w,x
   lda #16
   sta enemy_y_hi.w,x
@@ -99,6 +99,12 @@ enemy_next_state:
   lda e_param_jump_lo.w,x
   pha
   rts
+@hover
+  plx
+  lda enemy_y_hi.w,x
+  sta enemy_misc0.w,x
+  stz enemy_misc1.w,x
+  bra @end
 @move
   plx
   jsr enemy_param_vx
@@ -107,6 +113,9 @@ enemy_next_state:
 @sine
   plx
   jsr enemy_param_vx
+  lda enemy_y_hi.w,x
+  sta enemy_misc0.w,x
+  stz enemy_misc1.w,x
   bra @end
 @fire
   plx
@@ -136,7 +145,6 @@ enemy_next_state:
   sta enemy_vy_lo.w,x
   bra @end
 @wait
-@hover
 @delete
 @trigger
   plx
@@ -183,6 +191,7 @@ enemy_param_vx:
   iny                         ; Advance PC
   sta enemy_vx_lo.w,x         ; Store into subpixel VX
   stz enemy_vx_hi.w,x         ; Set VX to 0.PARAM
+  cmp #0                      ; Test PARAM
   bpl +                       ; If PARAM was negative
   lda #$FF                    ; Sign extend VX
   sta enemy_vx_hi.w,x
@@ -198,6 +207,7 @@ enemy_param_vy:
   iny                         ; Advance PC
   sta enemy_vy_lo.w,x         ; Store into subpixel VY
   stz enemy_vy_hi.w,x         ; Set VY to 0.PARAM
+  cmp #0                      ; Test PARAM
   bpl +                       ; If PARAM was negative
   lda #$FF                    ; Sign extend VY
   sta enemy_vy_hi.w,x
@@ -318,7 +328,58 @@ enemy_pshot_collision:
 
 e_wait:
   jmp enemy_pshot_collision
+
+e_move_x:
+  clc
+  lda enemy_x_lo.w,x
+  adc enemy_vx_lo.w,x
+  sta enemy_x_lo.w,x
+  lda enemy_x_hi.w,x
+  adc enemy_vx_hi.w,x
+  sta enemy_x_hi.w,x
   rts
+
+e_move_y:
+  clc
+  lda enemy_y_lo.w,x
+  adc enemy_vy_lo.w,x
+  sta enemy_y_lo.w,x
+  lda enemy_y_hi.w,x
+  adc enemy_vy_hi.w,x
+  sta enemy_y_hi.w,x
+  rts
+
+e_move:
+  jsr e_move_x
+  jsr e_move_y
+  jmp enemy_pshot_collision
+
+e_sine_y:
+  ldy enemy_misc1.w,x
+  iny
+  cpy #48
+  bne +
+  ldy #0
++
+  tya
+  sta enemy_misc1.w,x
+  clc
+  lda e_sin_table.w,y
+  adc enemy_misc0.w,x
+  sta enemy_y_hi.w,x
+  rts
+
+e_sin_table:
+  .DBSIN 0, 48, 360/48, 7.9, 0
+
+e_hover:
+  jsr e_sine_y
+  jmp enemy_pshot_collision
+
+e_sine:
+  jsr e_move_x
+  jsr e_sine_y
+  jmp enemy_pshot_collision
 
 e_delete:
   clc
@@ -326,9 +387,9 @@ e_delete:
 
 enemy_func_lo:
   .DB <(e_wait-1)
-  .DB <(e_wait-1)
-  .DB <(e_wait-1)
-  .DB <(e_wait-1)
+  .DB <(e_hover-1)
+  .DB <(e_move-1)
+  .DB <(e_sine-1)
   .DB <(e_wait-1)
   .DB <(e_wait-1)
   .DB <(e_wait-1)
@@ -338,9 +399,9 @@ enemy_func_lo:
 
 enemy_func_hi:
   .DB >(e_wait-1)
-  .DB >(e_wait-1)
-  .DB >(e_wait-1)
-  .DB >(e_wait-1)
+  .DB >(e_hover-1)
+  .DB >(e_move-1)
+  .DB >(e_sine-1)
   .DB >(e_wait-1)
   .DB >(e_wait-1)
   .DB >(e_wait-1)
@@ -349,7 +410,9 @@ enemy_func_hi:
   .DB >(e_delete-1)
 
 e_dummy_script:
-  .DB E_WAIT, 120
+  .DB E_MOVE, 16+32, $F0, $00
+  .DB E_HOVER, 48+48
+  .DB E_SINE, 128, $F0
   .DB E_DELETE, 0
 
 enemy_script_lo:
@@ -485,3 +548,4 @@ test_collision:
   rts                         ; Return result
 
 .ENDS
+
