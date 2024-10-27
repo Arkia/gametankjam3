@@ -2,6 +2,8 @@
 .DEFINE PLAYER_ANIM_SPEED 4
 .DEFINE PLAYER_FRAME_COUNT 8
 .DEFINE PLAYER_SHOT_DELAY 16
+.DEFINE PLAYER_IFRAMES 120
+.DEFINE PLAYER_DEAD_TIME 240
 
 .RAMSECTION "Player" BANK 0 SLOT 0
   player_x      dw
@@ -11,6 +13,9 @@
   player_frame  db
   player_atimer db
   player_stimer db
+  player_state  db
+  player_timer  db
+  player_iframe db
 .ENDS
 
 .SECTION "PlayerRoutines" BANK 1 SLOT 4
@@ -25,9 +30,26 @@ init_player:
   sta player_y+1      ; Set player Y
   lda #PLAYER_ANIM_SPEED
   sta player_atimer
+  stz player_state
+  stz player_iframe
   rts                 ; Return
 
 update_player:
+  lda player_state          ; Get player state
+  beq ++                    ; If dead, no update
+  dec player_timer          ; Decrement state timer
+  beq +
+  rts
++
+  jsr init_player           ; Reset player object
+  lda #PLAYER_IFRAMES
+  sta player_iframe
+  rts
+++
+  lda player_iframe         ; Get iframes
+  beq +                     ; If zero, no iframe update
+  dec player_iframe         ; Decrement iframes
++
   dec player_atimer         ; Decrement animation timer
   bne @no_frame_inc         ; If not zero, don't increment frame
   lda #PLAYER_ANIM_SPEED    ; Load animation delay
@@ -44,6 +66,34 @@ update_player:
   beq +                     ; If not zero
   dec player_stimer         ; Decrement shot delay timer
 +
+  ldx enemy_count     ; Load number of enemies
+  beq @do_input       ; Skip if list is empty
+  lda player_x+1      ; Get X position
+  ina                 ; Add 2
+  ina
+  sta a_x             ; Set A.X
+  lda player_y+1      ; Get Y position
+  ina                 ; Add 1
+  sta a_y             ; Set A.Y
+  lda #5              ; Combined AABB sizes
+  sta size_x
+  sta size_y
+  dex                 ; Index last enemy
+-
+  lda enemy_x_hi.w,x  ; Get enemy X
+  sta b_x             ; Set B.X
+  lda enemy_y_hi.w,x  ; Get enemy Y
+  sta b_y             ; Set B.Y
+  jsr test_collision  ; Check collision
+  bcs +               ; If no collision, next enemy
+  inc player_state    ; Set player to dead
+  lda #PLAYER_DEAD_TIME
+  sta player_timer
+  rts                 ; No more updates
++
+  dex                 ; Next enemy
+  bpl -               ; Loop
+@do_input
   lda p1_state        ; Load player 1 gamepad
   and #PAD_UP         ; Test dpad up
   beq +               ; Skip if button not held
@@ -130,6 +180,15 @@ update_player:
   rts                 ; Return
 
 draw_player:
+  lda player_state    ; Get current player state
+  beq +               ; If dead, don't draw
+  rts
++
+  lda player_iframe   ; Get iframe timer
+  and #%00000010      ; Flash on bit 1
+  beq +
+  rts
++
   lda player_x+1      ; Get player X
   sta DMA_VX          ; Set blit X
   lda player_y+1      ; Get player Y

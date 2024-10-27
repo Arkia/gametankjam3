@@ -50,6 +50,7 @@
 
 .RAMSECTION "ObjectCounts" BANK 0 SLOT "ZeroPage"
   pshot_count   db
+  effect_count  db
   enemy_count   db
 .ENDS
 
@@ -67,6 +68,7 @@
 init_objects:
   stz pshot_count
   stz enemy_count
+  stz effect_count
   rts
 
 ; Create an object of type A and return index in X
@@ -557,9 +559,7 @@ test_collision:
 .SECTION "ObjectData" BANK 0 SLOT "BankROM"
 e_dummy_script:
   .DB E_ANIM, 1, 0
-  .DB E_MOVE, 16+32, $F0, $00
-  .DB E_HOVER, 48+48
-  .DB E_SINE, 128, $F0
+  .DB E_MOVE, 255, $F0, $00
   .DB E_DELETE, 0
 
 enemy_script_lo:
