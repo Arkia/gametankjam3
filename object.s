@@ -12,12 +12,21 @@
 .DEFINE PLAYER_SHOT_MAX   16
 .DEFINE PLAYER_SHOT_SPEED $0200
 
+.DEFINE EFFECT_MAX
+
 .DEFINE ENEMY_MAX 16
 
 .RAMSECTION "ObjectArrays" BANK 0 SLOT "WRAM"
   pshot_x_lo    dsb PLAYER_SHOT_MAX
   pshot_x_hi    dsb PLAYER_SHOT_MAX
   pshot_y       dsb PLAYER_SHOT_MAX
+
+  effect_x      dsb EFFECT_MAX
+  effect_y      dsb EFFECT_MAX
+  effect_atimer dsb EFFECT_MAX
+  effect_anim   dsb EFFECT_MAX
+  effect_frame  dsb EFFECT_MAX
+  effect_sprite dsb EFFECT_MAX
 
   enemy_id      dsb ENEMY_MAX
   enemy_pc      dsb ENEMY_MAX
@@ -31,6 +40,7 @@
   enemy_vy_hi   dsb ENEMY_MAX
   enemy_state   dsb ENEMY_MAX
   enemy_timer   dsb ENEMY_MAX
+  enemy_sprtie  dsb ENEMY_MAX
   enemy_frame   dsb ENEMY_MAX
   enemy_anim    dsb ENEMY_MAX
   enemy_atimer  dsb ENEMY_MAX
@@ -73,25 +83,6 @@ spawn_object:
   stz enemy_x_lo.w,x          ; Clear subpixel X
   stz enemy_y_lo.w,x          ; Clear subpixel Y
   jmp enemy_next_state        ; Set initial state from script
-
-spawn_test_enemy:
-  ldx enemy_count             ; Get next enemy index
-  cpx #ENEMY_MAX              ; Check if slot free
-  bne +
-  rts                         ; If not, do nothing
-+
-  inc enemy_count
-  stz enemy_id.w,x
-  stz enemy_pc.w,x
-  stz enemy_x_lo.w,x
-  stz enemy_y_lo.w,x
-  stz enemy_frame.w,x
-  stz enemy_state.w,x
-  lda #128+16
-  sta enemy_x_hi.w,x
-  lda #16
-  sta enemy_y_hi.w,x
-  jmp enemy_next_state
 
 enemy_next_state:
   ldy enemy_id.w,x            ; Get enemy ID
@@ -396,6 +387,12 @@ e_sine:
   jsr e_sine_y
   jmp enemy_pshot_collision
 
+e_anim:
+  jsr enemy_next_state
+  ldy enemy_state,x
+  jsr call_enemy_state
+  rts
+
 e_delete:
   clc
   rts
@@ -407,7 +404,7 @@ enemy_func_lo:
   .DB <(e_sine-1)
   .DB <(e_wait-1)
   .DB <(e_wait-1)
-  .DB <(e_wait-1)
+  .DB <(e_anim-1)
   .DB <(e_wait-1)
   .DB <(e_wait-1)
   .DB <(e_delete-1)
@@ -419,22 +416,10 @@ enemy_func_hi:
   .DB >(e_sine-1)
   .DB >(e_wait-1)
   .DB >(e_wait-1)
-  .DB >(e_wait-1)
+  .DB >(e_anim-1)
   .DB >(e_wait-1)
   .DB >(e_wait-1)
   .DB >(e_delete-1)
-
-e_dummy_script:
-  .DB E_MOVE, 16+32, $F0, $00
-  .DB E_HOVER, 48+48
-  .DB E_SINE, 128, $F0
-  .DB E_DELETE, 0
-
-enemy_script_lo:
-  .DB <e_dummy_script
-
-enemy_script_hi:
-  .DB >e_dummy_script
 
 draw_enemies:
   ldx enemy_count             ; Get number of enemies
@@ -462,18 +447,6 @@ draw_enemies:
   dex                         ; Next enemy
   bpl @loop                   ; Loop
   rts
-
-e_sprite_gx:
-  .DB 0
-
-e_sprite_gy:
-  .DB 40
-
-e_sprite_w:
-  .DB 9
-
-e_sprite_h:
-  .DB 8
 
 remove_pshot:
   dec pshot_count             ; Decrement shot count
@@ -562,5 +535,48 @@ test_collision:
   cmp size_y                  ; Test against combined aabb half heights
   rts                         ; Return result
 
+.ENDS
+
+.SECTION "ObjectData" BANK 0 SLOT "BankROM"
+e_dummy_script:
+  .DB E_MOVE, 16+32, $F0, $00
+  .DB E_HOVER, 48+48
+  .DB E_SINE, 128, $F0
+  .DB E_DELETE, 0
+
+enemy_script_lo:
+  .DB <e_dummy_script
+
+enemy_script_hi:
+  .DB >e_dummy_script
+
+e_sprite_gx:
+  .REPT 10
+    .DB 0
+  .ENDR
+
+e_sprite_gy:
+  .REPT 10
+    .DB 40
+  .ENDR
+
+e_sprite_w:
+  .REPT 10
+    .DB 9
+  .ENDR
+
+e_sprite_h:
+  .REPT 10
+    .DB 8
+  .ENDR
+
+anim_len:
+  .DB 10  ; Dummy Enemy
+
+anim_speed:
+  .DB 4   ; Dummy Enemy
+
+anim_frame0:
+  .DB 0   ; Dummy Enemy
 .ENDS
 
