@@ -196,10 +196,28 @@ level1_data:
   .ENDR
   E_RANDOM_V $01, 16, 94, 8, 24
   L_DELAY 120
-  .DATA $06, 128, 60, 180
-  .DATA $06, 128, 60, 32
+  .DATA $05, 128, 60, 180
+  .DATA $05, 128, 60, 32
   .DATA $08, 131, 44, 2
   .DATA $08, 128, 76, 90
+  .REPT 4
+    E_RANDOM_V $08, 16, 94, 8, 32
+    E_RANDOM_V $05, 16, 94, 1, 32
+  .ENDR
+  .REPT 6
+    E_RANDOM_V $08, 16, 94, 4, 32
+    E_RANDOM_V $05, 16, 94, 1, 32
+  .ENDR
+  .REPT 8
+    E_RANDOM_V $08, 16, 94, 4, 32
+    E_RANDOM_V $05, 16, 94, 1, 32
+    E_RANDOM_H $0C, 4, 116, 8, 1, 32
+    E_RANDOM_V $08, 16, 94, 4, 32
+    E_RANDOM_V $05, 16, 94, 1, 32
+    E_RANDOM_H $0F, 4, 116, 128, 1, 32
+  .ENDR
+  .DATA $12, 60, 8, 120
+  .DATA $12, 60, 8, 120
   L_DELAY 500
   L_END
 .ENDS
