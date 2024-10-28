@@ -909,7 +909,7 @@ e_sine_slow:
 
 e_sine_fast:
   .DB E_ANIM, 1, 2
-  .DB E_SINE, 255, $E8
+  .DB E_SINE, 128, $E8
   .DB E_DELETE, 0
 
 e_sine_slow_fire_1:
