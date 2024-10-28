@@ -1007,7 +1007,11 @@ e_bomb_up:
   .DB E_FIRE, 1, 2, 2, $12, $EE
   .DB E_DELETE, 0
 
+e_null:
+  .DB E_DELETE, 0
+
 enemy_script_lo:
+  .DB <e_null
   .DB <e_straight_l
   .DB <e_straight_lu
   .DB <e_straight_ld
@@ -1029,6 +1033,7 @@ enemy_script_lo:
   .DB <e_bomb_up
 
 enemy_script_hi:
+  .DB >e_null
   .DB >e_straight_l
   .DB >e_straight_lu
   .DB >e_straight_ld

@@ -71,6 +71,42 @@ update_level:
   rts                                   ; Return
 .ENDS
 
+.MACRO L_DELAY
+  .DATA   $00,  0,  0,  \1
+.ENDM
+
+.MACRO L_END
+  .DATA   $FF,  0,  0,  0
+.ENDM
+
+.MACRO SL_DECEND
+  .REPT 3 INDEX I
+    .DATA   $01,  128,  \1+I*\2,  \3
+  .ENDR
+.ENDM
+
+.MACRO SL_ACCEND
+  .REPT 3 INDEX I
+    .DATA   $01,  128,  \1-I*\2,  \3
+  .ENDR
+.ENDM
+
+.MACRO SL_TO_MIDDLE
+  .DATA   $01,  128,  \1,   \3
+  .REPT 2 INDEX I
+    .DATA   $01,  129,  \1-(I+1)*\2,  1
+    .DATA   $01,  128,  \1+(I+1)*\2,  \3
+  .ENDR
+.ENDM
+
+.MACRO SL_FROM_MIDDLE
+  .REPT 2 INDEX I
+    .DATA   $01,  129,  \1-(2-I)*\2,  1
+    .DATA   $01,  128,  \1+(2-I)*\2,  \3
+  .ENDR
+  .DATA   $01,  128,  \1,   \3
+.ENDM
+
 .SECTION "LevelData" BANK 0 SLOT "BankROM"
 level_data_lo:
   .DB <level1_data
@@ -78,9 +114,14 @@ level_data_hi:
   .DB >level1_data
 level1_data:
   .TABLE  byte, byte, byte, word
-  .DATA   $03,  128,   64,   60
-  .DATA   $00,  128,   64,   60
-  .DATA   $01,  128,   64,   60
-  .DATA   $02,  128,   64,  120
-  .DATA   $FF,    0,    0,    0
+  L_DELAY 300
+  SL_DECEND 48, 8, 16
+  L_DELAY 120
+  SL_ACCEND 80, 8, 16
+  L_DELAY 120
+  SL_TO_MIDDLE 64, 8, 16
+  L_DELAY 120
+  SL_FROM_MIDDLE 64, 8, 16
+  L_DELAY 300
+  L_END
 .ENDS
