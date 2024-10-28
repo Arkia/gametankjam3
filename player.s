@@ -203,7 +203,7 @@ update_player:
   sta player_x+1      ; Set player X
 +
   lda p1_state        ; Get player 1 pressed buttons
-  and #PAD_A          ; Test button A
+  and #PAD_ABC        ; Test face buttons
   beq +               ; Skip if not pressed this frame
   lda player_stimer   ; Get shot delay timer
   bne +               ; If not zero, skip
