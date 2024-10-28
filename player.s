@@ -3,7 +3,7 @@
 .DEFINE PLAYER_FRAME_COUNT 8
 .DEFINE PLAYER_SHOT_DELAY 16
 .DEFINE PLAYER_IFRAMES 120
-.DEFINE PLAYER_DEAD_TIME 240
+.DEFINE PLAYER_DEAD_TIME 120
 
 .RAMSECTION "Player" BANK 0 SLOT 0
   player_x      dw
@@ -51,6 +51,9 @@ update_player:
   jsr init_player           ; Reset player object
   lda #PLAYER_IFRAMES
   sta player_iframe
+  ldy #3                    ; Respawn sfx
+  ldx #3                    ; Channel 3
+  jsr play_sound
   rts
 ++
   lda player_iframe         ; Get iframes

@@ -116,10 +116,12 @@ sfx_table_lo:
   .DB <sfx_shoot
   .DB <sfx_eshoot
   .DB <sfx_death
+  .DB <sfx_respawn
 sfx_table_hi:
   .DB >sfx_shoot
   .DB >sfx_eshoot
   .DB >sfx_death
+  .DB >sfx_respawn
 sfx_shoot:
   .DB $80
   .DB $20, $81
@@ -152,4 +154,17 @@ sfx_death:
   .DB $04, $A4
   .DB $02, $A4
   .DB $02, $00
+
+sfx_respawn:
+  .DB $80
+  .DB $18, $A2
+  .DB $20, $A2
+  .DB $28, $A4
+  .DB $1C, $A2
+  .DB $24, $A2
+  .DB $2C, $A4
+  .DB $20, $A2
+  .DB $28, $A2
+  .DB $30, $A8
+  .DB $30, $00
 .ENDS
