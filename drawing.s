@@ -127,6 +127,7 @@ draw_status_bar:
 draw_game:
   jsr wait_blitter
   jsr draw_enemies
+  jsr draw_eshots
   jsr draw_pshots
   jsr draw_player
   jsr wait_blitter

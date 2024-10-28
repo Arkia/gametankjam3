@@ -42,6 +42,7 @@ update_game:
   jsr draw_level1_bg          ; Draw level background
   jsr update_enemies          ; Move enemies
   jsr update_pshots           ; Move player projectiles
+  jsr update_eshots           ; Move enemy projectiles
   jsr update_status_bar       ; Print lives/score strings
   jmp draw_game               ; Draw objects
 

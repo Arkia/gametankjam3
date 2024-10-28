@@ -419,11 +419,40 @@ e_sine:
   jsr e_sine_y
   jmp enemy_pshot_collision
 
+e_fire:
+  ldy eshot_count                 ; Get next enemy shot
+  cpy #ENEMY_SHOT_MAX             ; Shot list empty?
+  beq @end                        ; If yes, skip this state
+  inc eshot_count                 ; Increment shot counter
+  clc                             ; Setup addition
+  lda enemy_x_hi.w,x              ; Get X position
+  adc enemy_misc0.w,x             ; Add shot offset
+  sta eshot_x_hi.w,y              ; Set shot X
+  lda #0
+  sta eshot_x_lo.w,y              ; Clear shot subpixel X
+  clc                             ; Setup addition
+  lda enemy_y_hi.w,x              ; Get Y position
+  adc enemy_misc1.w,x             ; Add shot offset
+  sta eshot_y_hi.w,y              ; Set shot Y
+  lda #0
+  sta eshot_y_lo.w,y              ; Clear shot subpixel Y
+  lda enemy_vx_lo.w,x             ; Get subpixel VX
+  sta eshot_vx_lo.w,y             ; Set shot subpixel VX
+  lda enemy_vx_hi.w,x             ; Get VX
+  sta eshot_vx_hi.w,y             ; Set shot VX
+  lda enemy_vy_lo.w,x             ; Get subpixel VY
+  sta eshot_vy_lo.w,y             ; Set shot subpixel VY
+  lda enemy_vy_hi.w,x             ; Get VY
+  sta eshot_vy_hi.w,x             ; Set shot VY
+@end
+  jsr enemy_next_state            ; Next state
+  ldy enemy_state.w,x             ; Get state ID
+  jmp call_enemy_state            ; Call state update
+
 e_anim:
   jsr enemy_next_state
   ldy enemy_state.w,x
-  jsr call_enemy_state
-  rts
+  jmp call_enemy_state
 
 e_delete:
   clc
@@ -560,15 +589,17 @@ update_eshots:
   adc eshot_vy_hi.w,x         ; Add VY
   sta eshot_y_hi.w,x          ; Update Y
   lda eshot_x_hi.w,x          ; Get X position
-  cmp #128                    ; Test with right edge
-  bcc @next_shot              ; If X is less than, next shot
-  cmp #-4                     ; Test with left edge
-  bcs @next_shot              ; If X is greater, next shot
+  cmp #128                    ; Test right edge
+  bcc @test_y
+  cmp #-4                     ; Test left edge
+  bcc @delete
+@test_y
   lda eshot_y_hi.w,x          ; Get Y position
-  cmp #128                    ; Test with bottom edge
+  cmp #128                    ; Test bottom edge
   bcc @next_shot
-  cmp #-4                     ; Test with top edge
+  cmp #-4                     ; Test top edge
   bcs @next_shot
+@delete
   jsr remove_eshot            ; Delete this shot
   bra @loop                   ; Loop
 @next_shot
@@ -600,6 +631,31 @@ draw_pshots:
   dex                         ; Next shot index
   bpl -                       ; Loop
   rts                         ; Return
+
+draw_eshots:
+  ldx eshot_count             ; Get number of Enemy Shots
+  dex                         ; Move to last index
+  bpl +
+  rts
++
+  lda #4                      ; Shot sprite size
+  sta DMA_WIDTH               ; Set blit width
+  sta DMA_HEIGHT              ; Set blit height
+  lda #64                     ; Shot sprite GX
+  sta DMA_GX                  ; Set blit GX
+  lda #51                     ; Shot sprite GY
+  sta DMA_GY                  ; Set blit GY
+-
+  lda eshot_x_hi.w,x          ; Get shot X
+  sta DMA_VX                  ; Set blit X
+  lda eshot_y_hi.w,x          ; Get shot Y
+  sta DMA_VY                  ; Set blit Y
+  lda #1
+  sta DMA_START
+  wai
+  dex
+  bpl -
+  rts
 
 ; Sets C if no collision between objects where
 ; a_x, a_y is the center of object A and
@@ -633,8 +689,9 @@ test_collision:
 e_dummy_script:
   .DB E_ANIM, 1, 0
   .DB E_MOVE, 80, $F0, $00
-  .DB E_WAIT, 30
-  .DB E_FIRE, 3, -4, $E0, $00
+  .DB E_WAIT, 60
+  .DB E_FIRE, 1, -4, 2, $E8, $00
+  .DB E_WAIT, 60
   .DB E_MOVE, 60, $F0, $00
   .DB E_DELETE, 0
 
