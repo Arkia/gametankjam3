@@ -824,6 +824,51 @@ e_spike_up_fast:
   .DB E_MOVE, 96, $00, $E8
   .DB E_DELETE, 0
 
+e_bomb_left:
+  .DB E_ANIM, 1, 5
+  .DB E_MOVE, 40, $F0, $00
+  .DB E_ANIM, 1, 6
+  .DB E_WAIT, 90
+  .DB E_FIRE, 1, 2, 2, $E8, $00
+  .DB E_FIRE, 1, 2, 2, $00, $E8
+  .DB E_FIRE, 1, 2, 2, $18, $00
+  .DB E_FIRE, 1, 2, 2, $00, $18
+  .DB E_FIRE, 1, 2, 2, $EE, $EE
+  .DB E_FIRE, 1, 2, 2, $EE, $12
+  .DB E_FIRE, 1, 2, 2, $12, $12
+  .DB E_FIRE, 1, 2, 2, $12, $EE
+  .DB E_DELETE, 0
+
+e_bomb_down:
+  .DB E_ANIM, 1, 5
+  .DB E_MOVE, 40, $00, $10
+  .DB E_ANIM, 1, 6
+  .DB E_WAIT, 90
+  .DB E_FIRE, 1, 2, 2, $E8, $00
+  .DB E_FIRE, 1, 2, 2, $00, $E8
+  .DB E_FIRE, 1, 2, 2, $18, $00
+  .DB E_FIRE, 1, 2, 2, $00, $18
+  .DB E_FIRE, 1, 2, 2, $EE, $EE
+  .DB E_FIRE, 1, 2, 2, $EE, $12
+  .DB E_FIRE, 1, 2, 2, $12, $12
+  .DB E_FIRE, 1, 2, 2, $12, $EE
+  .DB E_DELETE, 0
+
+e_bomb_up:
+  .DB E_ANIM, 1, 5
+  .DB E_MOVE, 40, $00, $F0
+  .DB E_ANIM, 1, 6
+  .DB E_WAIT, 90
+  .DB E_FIRE, 1, 2, 2, $E8, $00
+  .DB E_FIRE, 1, 2, 2, $00, $E8
+  .DB E_FIRE, 1, 2, 2, $18, $00
+  .DB E_FIRE, 1, 2, 2, $00, $18
+  .DB E_FIRE, 1, 2, 2, $EE, $EE
+  .DB E_FIRE, 1, 2, 2, $EE, $12
+  .DB E_FIRE, 1, 2, 2, $12, $12
+  .DB E_FIRE, 1, 2, 2, $12, $EE
+  .DB E_DELETE, 0
+
 enemy_script_lo:
   .DB <e_straight_l
   .DB <e_straight_lu
@@ -841,6 +886,9 @@ enemy_script_lo:
   .DB <e_spike_up_slow
   .DB <e_spike_up
   .DB <e_spike_up_fast
+  .DB <e_bomb_left
+  .DB <e_bomb_down
+  .DB <e_bomb_up
 
 enemy_script_hi:
   .DB >e_straight_l
@@ -859,6 +907,9 @@ enemy_script_hi:
   .DB >e_spike_up_slow
   .DB >e_spike_up
   .DB >e_spike_up_fast
+  .DB >e_bomb_left
+  .DB >e_bomb_down
+  .DB >e_bomb_up
 
 e_sprite_gx:
   .REPT 10 INDEX I
@@ -867,42 +918,33 @@ e_sprite_gx:
   .REPT 4 INDEX I
     .DB I*16
   .ENDR
-  .DB 64
-  .DB 72
-  .DB 80
+  .REPT 5 INDEX I
+    .DB 64+I*8
+  .ENDR
 
 e_sprite_gy:
   .REPT 10
     .DB 40
   .ENDR
-  .REPT 4
+  .REPT 9
     .DB 32
   .ENDR
-  .DB 32
-  .DB 32
-  .DB 32
 
 e_sprite_w:
   .REPT 10
     .DB 9
   .ENDR
-  .REPT 4
+  .REPT 9
     .DB 8
   .ENDR
-  .DB 8
-  .DB 8
-  .DB 8
 
 e_sprite_h:
   .REPT 10
     .DB 8
   .ENDR
-  .REPT 4
+  .REPT 9
     .DB 8
   .ENDR
-  .DB 8
-  .DB 8
-  .DB 8
 
 anim_len:
   .DB 1   ; Dummy Enemy
@@ -910,6 +952,8 @@ anim_len:
   .DB 1   ; Sine
   .DB 1   ; Spike Down
   .DB 1   ; Spike Up
+  .DB 1   ; Bomb Idle
+  .DB 2   ; Bomb Blink
 
 anim_speed:
   .DB $FF ; Dummy Enemy
@@ -917,6 +961,8 @@ anim_speed:
   .DB $FF ; Sine
   .DB $FF ; Spike Down
   .DB $FF ; Spike Up
+  .DB $FF ; Bomb Idle
+  .DB 16  ; Bomb Blink
 
 anim_frame0:
   .DB 0   ; Dummy Enemy
@@ -924,5 +970,7 @@ anim_frame0:
   .DB 14  ; Sine
   .DB 15  ; Spike Down
   .DB 16  ; Spike Up
+  .DB 17  ; Bomb Idle
+  .DB 17  ; Bomb Blink
 .ENDS
 
