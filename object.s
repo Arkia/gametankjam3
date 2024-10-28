@@ -12,6 +12,8 @@
 .DEFINE PLAYER_SHOT_MAX   16
 .DEFINE PLAYER_SHOT_SPEED $0200
 
+.DEFINE ENEMY_SHOT_MAX    16
+
 .DEFINE EFFECT_MAX
 
 .DEFINE ENEMY_MAX 16
@@ -20,6 +22,15 @@
   pshot_x_lo    dsb PLAYER_SHOT_MAX
   pshot_x_hi    dsb PLAYER_SHOT_MAX
   pshot_y       dsb PLAYER_SHOT_MAX
+
+  eshot_x_lo    dsb ENEMY_SHOT_MAX
+  eshot_x_hi    dsb ENEMY_SHOT_MAX
+  eshot_y_lo    dsb ENEMY_SHOT_MAX
+  eshot_y_hi    dsb ENEMY_SHOT_MAX
+  eshot_vx_lo   dsb ENEMY_SHOT_MAX
+  eshot_vx_hi   dsb ENEMY_SHOT_MAX
+  eshot_vy_lo   dsb ENEMY_SHOT_MAX
+  eshot_vy_hi   dsb ENEMY_SHOT_MAX
 
   effect_x      dsb EFFECT_MAX
   effect_y      dsb EFFECT_MAX
@@ -50,6 +61,7 @@
 
 .RAMSECTION "ObjectCounts" BANK 0 SLOT "ZeroPage"
   pshot_count   db
+  eshot_count   db
   effect_count  db
   enemy_count   db
 .ENDS
@@ -67,6 +79,7 @@
 
 init_objects:
   stz pshot_count
+  stz eshot_count
   stz enemy_count
   stz effect_count
   rts
@@ -421,7 +434,7 @@ enemy_func_lo:
   .DB <(e_hover-1)
   .DB <(e_move-1)
   .DB <(e_sine-1)
-  .DB <(e_wait-1)
+  .DB <(e_fire-1)
   .DB <(e_wait-1)
   .DB <(e_anim-1)
   .DB <(e_wait-1)
@@ -433,7 +446,7 @@ enemy_func_hi:
   .DB >(e_hover-1)
   .DB >(e_move-1)
   .DB >(e_sine-1)
-  .DB >(e_wait-1)
+  .DB >(e_fire-1)
   .DB >(e_wait-1)
   .DB >(e_anim-1)
   .DB >(e_wait-1)
@@ -478,6 +491,26 @@ remove_pshot:
   sta pshot_y.w,x
   rts
 
+remove_eshot:
+  dec eshot_count
+  ldy eshot_count
+  lda eshot_x_lo.w,y
+  sta eshot_x_lo.w,x
+  lda eshot_x_hi.w,y
+  sta eshot_x_hi.w,x
+  lda eshot_y_lo.w,y
+  sta eshot_y_lo.w,x
+  lda eshot_y_hi.w,y
+  sta eshot_y_hi.w,x
+  lda eshot_vx_lo.w,y
+  sta eshot_vx_lo.w,x
+  lda eshot_vx_hi.w,y
+  sta eshot_vx_hi.w,x
+  lda eshot_vy_lo.w,y
+  sta eshot_vy_lo.w,x
+  lda eshot_vy_hi.w,y
+  sta eshot_vy_hi.w,x
+
 update_pshots:
   ldx #0                      ; Start at index 0
 @loop
@@ -500,6 +533,46 @@ update_pshots:
   bra @loop                   ; Loop
 +
   inx                         ; Next shot
+  bra @loop                   ; Loop
+
+update_eshots:
+  ldx #0                      ; Start at index 0
+@loop
+  cpx eshot_count             ; End of list?
+  bcc +
+  rts
++
+  bne +
+  rts
++
+  clc                         ; Setup addition
+  lda eshot_x_lo.w,x          ; Get subpixel X
+  adc eshot_vx_lo.w,x         ; Add subpixel VX
+  sta eshot_x_lo.w,x          ; Update subpixel X
+  lda eshot_x_hi.w,x          ; Get X
+  adc eshot_vx_hi.w,x         ; Add VX
+  sta eshot_x_hi.w,x          ; Update X
+  clc                         ; Setup addition
+  lda eshot_y_lo.w,x          ; Get subpixel Y
+  adc eshot_vy_lo.w,x         ; Add subpixel VY
+  sta eshot_y_lo.w,x          ; Update subpixel Y
+  lda eshot_y_hi.w,x          ; Get Y
+  adc eshot_vy_hi.w,x         ; Add VY
+  sta eshot_y_hi.w,x          ; Update Y
+  lda eshot_x_hi.w,x          ; Get X position
+  cmp #128                    ; Test with right edge
+  bcc @next_shot              ; If X is less than, next shot
+  cmp #-4                     ; Test with left edge
+  bcs @next_shot              ; If X is greater, next shot
+  lda eshot_y_hi.w,x          ; Get Y position
+  cmp #128                    ; Test with bottom edge
+  bcc @next_shot
+  cmp #-4                     ; Test with top edge
+  bcs @next_shot
+  jsr remove_eshot            ; Delete this shot
+  bra @loop                   ; Loop
+@next_shot
+  inx                         ; Next index
   bra @loop                   ; Loop
 
 draw_pshots:
@@ -559,7 +632,10 @@ test_collision:
 .SECTION "ObjectData" BANK 0 SLOT "BankROM"
 e_dummy_script:
   .DB E_ANIM, 1, 0
-  .DB E_MOVE, 255, $F0, $00
+  .DB E_MOVE, 80, $F0, $00
+  .DB E_WAIT, 30
+  .DB E_FIRE, 3, -4, $E0, $00
+  .DB E_MOVE, 60, $F0, $00
   .DB E_DELETE, 0
 
 enemy_script_lo:
