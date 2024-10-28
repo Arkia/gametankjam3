@@ -326,15 +326,15 @@ call_enemy_state:
   rts                         ; Jump to routine
 
 enemy_pshot_collision:
+  clc                         ; Setup addition
   lda enemy_x_hi.w,x          ; Get enemy X
-  ina                         ; Offset
-  ina
-  sta b_x                     ; Set B.X
+  adc #4                      ; Move to center
+  sta a_x                     ; Set A.X
+  clc                         ; Setup addition
   lda enemy_y_hi.w,x          ; Get enemy Y
-  ina                         ; Offset
-  ina
-  sta b_y                     ; Set B.Y
-  lda #4+2                    ; Combined sizes of enemy and pshot
+  adc #4                      ; Move to center
+  sta a_y                     ; Set A.Y
+  lda #6                      ; Combined sizes of enemy and pshot
   sta size_x                  ; Set aabb widths
   sta size_y                  ; Set aabb heights
   ldy #0                      ; Set Y to first Player Shot
@@ -347,11 +347,16 @@ enemy_pshot_collision:
   bra @no_collision           ; End of list
 +
   lda pshot_x_hi.w,y          ; Get player shot X
-  sta a_x                     ; Set A.X
+  ina
+  ina
+  sta b_x                     ; Set B.X
   lda pshot_y.w,y             ; Get player shot Y
-  sta a_y                     ; Set A.Y
+  ina
+  ina
+  sta b_y                     ; Set B.Y
   jsr test_collision          ; Check collision
-  bcs +                       ; Skip if no collision
+  bcs @no_collision           ; Skip if no collision
+@collision
   phx                         ; Save X
   tya                         ; Move pshot index to A
   tax                         ; Move to X
@@ -360,9 +365,31 @@ enemy_pshot_collision:
   ldx #2                      ; Channel 2
   jsr play_sound              ; Play sound
   plx                         ; Restore X
+  ldy enemy_id.w,x            ; Get enemy ID
+  lda e_score_value.w,y       ; Get points
+  sed                         ; Set decimal
+  clc                         ; Setup addition
+  adc bcd_score+1             ; Add to score hundreds
+  sta bcd_score+1             ; Update score hundreds
+  bcc +
+  lda bcd_score               ; Get score ten thousands
+  adc #0                      ; Add 1
+  sta bcd_score               ; Update score ten thousands
+  lda bcd_lives               ; Get lives
+  cmp $99                     ; Max lives?
+  beq +
+  clc                         ; Setup addition
+  adc #1                      ; Add 1 life
+  sta bcd_lives               ; Update lives
+  phx                         ; Save enemy index
+  ldy #4                      ; Gain life sfx
+  ldx #4                      ; Channel 4
+  jsr play_sound
+  plx                         ; Restore X
++
+  cld                         ; Clear decimal
   clc                         ; Flag collision
   rts                         ; Return
-+
 @no_collision
   sec                         ; Flag no collision
   rts                         ; Return
@@ -918,6 +945,27 @@ enemy_script_hi:
   .DB >e_bomb_left
   .DB >e_bomb_down
   .DB >e_bomb_up
+
+e_score_value:
+  .DB $50
+  .DB $50
+  .DB $50
+  .DB $02
+  .DB $02
+  .DB $02
+  .DB $05
+  .DB $05
+  .DB $05
+  .DB $05
+  .DB $00
+  .DB $00
+  .DB $00
+  .DB $00
+  .DB $00
+  .DB $00
+  .DB $03
+  .DB $03
+  .DB $03
 
 e_sprite_gx:
   .REPT 10 INDEX I
