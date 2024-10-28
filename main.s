@@ -34,6 +34,7 @@ MAP 'f'        = 43
 .DEFINE PAD_A     %01000000
 .DEFINE PAD_START %10000000
 .DEFINE PAD_ABC   %01110000
+.DEFINE PAD_ANY   %11110000
 
 .RAMSECTION "Controller" BANK 0 SLOT 0
   p1_state    db
@@ -45,11 +46,11 @@ MAP 'f'        = 43
 .ENDS
 
 .ENUMID 0
-.ENUMID STATE_TITLE
+.ENUMID STATE_PRE_LEVEL
 .ENUMID STATE_GAME
 .ENUMID STATE_WIN
 .ENUMID STATE_LOSE
-.DEFINE STATE_NULL    $FF
+.DEFINE STATE_NULL        $FF
 
 .RAMSECTION "MainState" BANK 0 SLOT 0
   current_state   db
@@ -102,7 +103,7 @@ reset:
   sta dma_flags   ; Update mirror
   cli
 
-  lda #STATE_GAME
+  lda #STATE_PRE_LEVEL
   sta next_state
   
 main_loop:
@@ -265,17 +266,25 @@ test_image:
 
 .SECTION "StateTable" BANK 1 SLOT 4
   state_init_lo:
-    .DB 0
+    .DB <init_pre_level
     .DB <init_game
+    .DB <init_win
+    .DB <init_lose
   state_init_hi:
-    .DB 0
+    .DB >init_pre_level
     .DB >init_game
+    .DB >init_win
+    .DB >init_lose
   state_update_lo:
-    .DB 0
+    .DB <update_pre_level
     .DB <update_game
+    .DB <update_win
+    .DB <update_lose
   state_update_hi:
-    .DB 0
+    .DB >update_pre_level
     .DB >update_game
+    .DB >update_win
+    .DB >update_lose
 .ENDS
   
 .SECTION "VectorTable" BANK 1 SLOT 4 ORGA $FFFA FORCE

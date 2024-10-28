@@ -35,14 +35,16 @@ init_player:
   rts                 ; Return
 
 update_player:
-  lda player_state          ; Get player state
-  beq ++                    ; If dead, no update
+  bit player_state          ; Get player state
+  bpl ++                    ; If dead, no update
   dec player_timer          ; Decrement state timer
   beq +
   rts
 +
   lda bcd_lives             ; Get player lives
   bne +
+  lda #STATE_LOSE
+  sta next_state
   rts
 +
   sed                       ; Set decimal mode
@@ -98,7 +100,8 @@ update_player:
   sta b_y             ; Set B.Y
   jsr test_collision  ; Check collision
   bcs +               ; If no collision, next enemy
-  inc player_state    ; Set player to dead
+  lda #%10000000
+  sta player_state    ; Set player to dead
   lda #PLAYER_DEAD_TIME
   sta player_timer
   ldy #2              ; Death sfx
@@ -144,6 +147,10 @@ update_player:
   dex                 ; Next enemy
   bpl -               ; Loop
 @do_input
+  bit player_state    ; Check player state
+  bvc +               ; If no input state
+  rts                 ; End update
++
   lda p1_state        ; Load player 1 gamepad
   and #PAD_UP         ; Test dpad up
   beq +               ; Skip if button not held
@@ -231,7 +238,7 @@ update_player:
 
 draw_player:
   lda player_state    ; Get current player state
-  beq +               ; If dead, don't draw
+  bpl +               ; If dead, don't draw
   rts
 +
   lda player_iframe   ; Get iframe timer
