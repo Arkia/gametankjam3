@@ -864,8 +864,8 @@ e_star_3_seq:
 
 e_star_3_way:
   .DB E_ANIM, 1, 1
-  .DB E_MOVE, 48, $F0, $00
-  .DB E_WAIT, 60
+  .DB E_MOVE, 36, $E8, $00
+  .DB E_WAIT, 30
   .DB E_FIRE, 1, 2, 2, $E8, $00
   .DB E_FIRE, 1, 2, 2, $EE, $EE
   .DB E_FIRE, 1, 2, 2, $EE, $12
@@ -879,8 +879,8 @@ e_star_3_way:
 
 e_star_5_way:
   .DB E_ANIM, 1, 1
-  .DB E_MOVE, 48, $F0, $00
-  .DB E_WAIT, 60
+  .DB E_MOVE, 36, $E8, $00
+  .DB E_WAIT, 30
   .DB E_FIRE, 1, 2, 2, $E8, $00
   .DB E_FIRE, 1, 2, 2, $EB, $F8
   .DB E_FIRE, 1, 2, 2, $EE, $EE

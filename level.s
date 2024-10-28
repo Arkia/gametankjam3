@@ -133,14 +133,14 @@ update_level:
 ; ARGS: Enemy ID, Y-Min, Y-Max, Count, Delay Ticks
 .MACRO E_RANDOM_V
   .REPT \4
-    .DATA   \1,  128,  random(\2/4, \3/4)*4, \5
+    .DATA   \1,  128,  random(floor(\2/4), floor(\3/4))*4, \5
   .ENDR
 .ENDM
 
 ; ARGS: Enemy ID, X-Min, X-Max, Y, Count, Delay Ticks
 .MACRO E_RANDOM_H
   .REPT \5
-    .DATA   \1, random(\2/4, \3/4)*4, \4, \6
+    .DATA   \1, random(floor(\2/4), floor(\3/4))*4, \4, \6
   .ENDR
 .ENDM
 
@@ -178,6 +178,17 @@ level1_data:
   E_DECEND $08, 28, 16, 4, 64
   L_DELAY 60
   E_ACCEND $08, 94, 16, 4, 64
+  L_DELAY 90
+  .REPT 8
+    E_RANDOM_V $01, 16, 94, 4, 32
+    E_RANDOM_V $08, 16, 94, 1, 32
+  .ENDR
+  E_RANDOM_V $01, 16, 94, 4, 32
+  L_DELAY 120
+  E_HORIZ $0C, 4, 16, 8, 8, 16
+  E_HORIZ $0F, 116, -16, 128, 8, 16
+  L_DELAY 60
+
   L_DELAY 500
   L_END
 .ENDS
