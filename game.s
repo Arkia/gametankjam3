@@ -255,7 +255,8 @@ bcd_to_string:
 @write_char0
   sta (bcd_write)           ; Write digit
   inc bcd_write             ; Advance pointer
-  bcc +
+  lda bcd_write             ; Get pointer low
+  bne +
   inc bcd_write+1           ; Carry into high byte
 +
   pla                       ; Restore argument
@@ -275,7 +276,8 @@ bcd_to_string:
 @write_char1
   sta (bcd_write)           ; Write digit
   inc bcd_write             ; Advance pointer
-  bcc +
+  lda bcd_write             ; Get pointer low
+  bne +
   inc bcd_write+1           ; Carry into high byte
 +
   rts                       ; Return
