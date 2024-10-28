@@ -81,6 +81,7 @@ update_win:
   jsr wait_blitter            ; Wait for clear screen to finish
   jsr draw_level1_bg          ; Draw level background
   jsr update_enemies          ; Move enemies
+  jsr update_effects
   jsr update_pshots           ; Move player projectiles
   jsr update_eshots           ; Move enemy projectiles
   jsr update_status_bar       ; Print lives/score strings
@@ -140,6 +141,7 @@ update_lose:
   jsr wait_blitter            ; Wait for clear screen to finish
   jsr draw_level1_bg          ; Draw level background
   jsr update_enemies          ; Move enemies
+  jsr update_effects
   jsr update_pshots           ; Move player projectiles
   jsr update_eshots           ; Move enemy projectiles
   jsr update_status_bar       ; Print lives/score strings
@@ -196,6 +198,7 @@ update_game:
   jsr wait_blitter            ; Wait for clear screen to finish
   jsr draw_level1_bg          ; Draw level background
   jsr update_enemies          ; Move enemies
+  jsr update_effects
   jsr update_pshots           ; Move player projectiles
   jsr update_eshots           ; Move enemy projectiles
   jsr update_status_bar       ; Print lives/score strings

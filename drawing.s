@@ -131,6 +131,7 @@ draw_game:
   jsr draw_pshots
   jsr draw_player
   jsr wait_blitter
+  jsr draw_effects
   jsr draw_status_bar
   lda #$FF
   jsr draw_border

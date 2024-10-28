@@ -14,7 +14,7 @@
 
 .DEFINE ENEMY_SHOT_MAX    32
 
-.DEFINE EFFECT_MAX
+.DEFINE EFFECT_MAX 16
 
 .DEFINE ENEMY_MAX 16
 
@@ -82,6 +82,86 @@ init_objects:
   stz eshot_count
   stz enemy_count
   stz effect_count
+  rts
+
+init_effect_anim:
+  ldy effect_anim.w,x         ; Get animation ID
+  lda anim_speed.w,y          ; Read animation speed
+  sta effect_atimer.w,x       ; Set timer
+  stz effect_frame.w,x        ; Start at frame 0
+  lda anim_frame0.w,y         ; Get first sprite
+  sta effect_sprite.w,x       ; Set sprite
+  rts
+
+remove_effect:
+  dec effect_count            ; Update effect count
+  ldy effect_count            ; Index last effect in Y
+  lda effect_x.w,y
+  sta effect_x.w,x
+  lda effect_y.w,y
+  sta effect_y.w,x
+  lda effect_anim.w,y
+  sta effect_anim.w,x
+  lda effect_atimer.w,y
+  sta effect_atimer.w,x
+  lda effect_frame.w,y
+  sta effect_frame.w,x
+  lda effect_sprite.w,y
+  sta effect_sprite.w,x
+  rts
+
+update_effects:
+  ldx #0                      ; Start at index 0
+-
+  cpx effect_count            ; End of effect list?
+  bne +
+  rts
++
+  dec effect_atimer.w,x       ; Upate animation timer
+  bne @next_effect
+  lda effect_frame.w,x        ; Get current frame
+  ldy effect_anim.w,x         ; Get animation ID
+  ina                         ; Next frame
+  cmp anim_len,y              ; End of animation?
+  bne +
+  jsr remove_effect           ; Delete this effect
+  bra -                       ; Loop
++
+  sta effect_frame.w,x        ; Update frame
+  clc                         ; Setup addition
+  adc anim_frame0.w,y         ; Calculate sprite index
+  sta effect_sprite.w,x       ; Update sprite
+  lda anim_speed.w,y          ; Get animation speed
+  sta effect_atimer.w,x       ; Reset animation timer
+@next_effect
+  inx                         ; Next effect
+  bra -                       ; Loop
+
+draw_effects:
+  ldx effect_count            ; Get effect count
+  bne +
+  rts                         ; Return if no effects
++
+  dex                         ; Move to last effect index
+-
+  lda effect_x.w,x            ; Get X position
+  sta DMA_VX                  ; Set blit VX
+  lda effect_y.w,x            ; Get Y position
+  sta DMA_VY                  ; Set blit VY
+  ldy effect_sprite.w,x       ; Get sprite index
+  lda e_sprite_gx.w,y         ; Get sprite GX
+  sta DMA_GX                  ; Set blit GX
+  lda e_sprite_gy.w,y         ; Get sprite GY
+  sta DMA_GY                  ; Set blit GY
+  lda e_sprite_w.w,y          ; Get sprite width
+  sta DMA_WIDTH               ; Set blit width
+  lda e_sprite_h.w,y          ; Get sprite height
+  sta DMA_HEIGHT              ; Set blit height
+  lda #1
+  sta DMA_START
+  wai
+  dex
+  bpl -
   rts
 
 ; Create an object of type A and return index in X
@@ -355,7 +435,7 @@ enemy_pshot_collision:
   ina
   sta b_y                     ; Set B.Y
   jsr test_collision          ; Check collision
-  bcs @no_collision           ; Skip if no collision
+  bcs @next_shot              ; Skip if no collision
 @collision
   phx                         ; Save X
   tya                         ; Move pshot index to A
@@ -365,6 +445,26 @@ enemy_pshot_collision:
   ldx #2                      ; Channel 2
   jsr play_sound              ; Play sound
   plx                         ; Restore X
+  ldy effect_count            ; Get next effect index
+  cpy #EFFECT_MAX             ; Effect list full?
+  beq @no_effect              ; If so, don't spawn explosion
+  inc effect_count            ; Add new effect
+  sec                         ; Setup subtraction
+  lda enemy_x_hi.w,x          ; Get X position
+  sbc #4                      ; Subtract 4
+  sta effect_x.w,y            ; Set effect X
+  sec                         ; Setup subtraction
+  lda enemy_y_hi.w,x          ; Get Y position
+  sbc #4                      ; Subtract 4
+  sta effect_y.w,y            ; Set effect Y
+  lda #7                      ; Explosion animation
+  sta effect_anim.w,y         ; Set effect animation
+  phx
+  tya
+  tax
+  jsr init_effect_anim
+  plx
+@no_effect
   ldy enemy_id.w,x            ; Get enemy ID
   lda e_score_value.w,y       ; Get points
   sed                         ; Set decimal
@@ -390,6 +490,9 @@ enemy_pshot_collision:
   cld                         ; Clear decimal
   clc                         ; Flag collision
   rts                         ; Return
+@next_shot
+  iny                         ; Next shot index
+  bra -                       ; Loop
 @no_collision
   sec                         ; Flag no collision
   rts                         ; Return
@@ -977,6 +1080,16 @@ e_sprite_gx:
   .REPT 5 INDEX I
     .DB 64+I*8
   .ENDR
+  .REPT 5 INDEX I
+    .DB I*16
+  .ENDR
+  .REPT 4 INDEX I
+    .DB I*16
+  .ENDR
+  .REPT 4 INDEX I
+    .DB I*16
+  .ENDR
+
 
 e_sprite_gy:
   .REPT 10
@@ -984,6 +1097,15 @@ e_sprite_gy:
   .ENDR
   .REPT 9
     .DB 32
+  .ENDR
+  .REPT 5
+    .DB 56
+  .ENDR
+  .REPT 4
+    .DB 72
+  .ENDR
+  .REPT 4
+    .DB 88
   .ENDR
 
 e_sprite_w:
@@ -993,6 +1115,9 @@ e_sprite_w:
   .REPT 9
     .DB 8
   .ENDR
+  .REPT 13
+    .DB 16
+  .ENDR
 
 e_sprite_h:
   .REPT 10
@@ -1000,6 +1125,9 @@ e_sprite_h:
   .ENDR
   .REPT 9
     .DB 8
+  .ENDR
+  .REPT 13
+    .DB 16
   .ENDR
 
 anim_len:
@@ -1010,6 +1138,7 @@ anim_len:
   .DB 1   ; Spike Up
   .DB 1   ; Bomb Idle
   .DB 2   ; Bomb Blink
+  .DB 13  ; Explosion
 
 anim_speed:
   .DB $FF ; Dummy Enemy
@@ -1019,6 +1148,7 @@ anim_speed:
   .DB $FF ; Spike Up
   .DB $FF ; Bomb Idle
   .DB 16  ; Bomb Blink
+  .DB 1   ; Explosion
 
 anim_frame0:
   .DB 0   ; Dummy Enemy
@@ -1028,5 +1158,6 @@ anim_frame0:
   .DB 16  ; Spike Up
   .DB 17  ; Bomb Idle
   .DB 17  ; Bomb Blink
+  .DB 19  ; Explosion
 .ENDS
 
