@@ -12,7 +12,7 @@
 .DEFINE PLAYER_SHOT_MAX   16
 .DEFINE PLAYER_SHOT_SPEED $0200
 
-.DEFINE ENEMY_SHOT_MAX    16
+.DEFINE ENEMY_SHOT_MAX    32
 
 .DEFINE EFFECT_MAX
 
@@ -443,7 +443,7 @@ e_fire:
   lda enemy_vy_lo.w,x             ; Get subpixel VY
   sta eshot_vy_lo.w,y             ; Set shot subpixel VY
   lda enemy_vy_hi.w,x             ; Get VY
-  sta eshot_vy_hi.w,x             ; Set shot VY
+  sta eshot_vy_hi.w,y             ; Set shot VY
 @end
   jsr enemy_next_state            ; Next state
   ldy enemy_state.w,x             ; Get state ID
@@ -686,48 +686,146 @@ test_collision:
 .ENDS
 
 .SECTION "ObjectData" BANK 0 SLOT "BankROM"
-e_dummy_script:
+e_straight_l:
   .DB E_ANIM, 1, 0
-  .DB E_MOVE, 80, $F0, $00
+  .DB E_MOVE, 255, $F0, $00
+  .DB E_DELETE, 0
+
+e_straight_lu:
+  .DB E_ANIM, 1, 0
+  .DB E_MOVE, 255, $F0, $FC
+  .DB E_DELETE, 0
+
+e_straight_ld:
+  .DB E_ANIM, 1, 0
+  .DB E_MOVE, 255, $F0, $04
+  .DB E_DELETE, 0
+
+e_star_3_seq:
+  .DB E_ANIM, 1, 1
+  .DB E_MOVE, 48, $F0, $00
   .DB E_WAIT, 60
-  .DB E_FIRE, 1, -4, 2, $E8, $00
+  .DB E_FIRE, 1, 2, 2, $E8, $00
+  .DB E_WAIT, 30
+  .DB E_FIRE, 1, 2, 2, $E8, $00
+  .DB E_WAIT, 30
+  .DB E_FIRE, 1, 2, 2, $E8, $00
+  .DB E_WAIT, 30
+  .DB E_MOVE, 128, $F0, $00
+  .DB E_DELETE, 0
+
+e_star_3_way:
+  .DB E_ANIM, 1, 1
+  .DB E_MOVE, 48, $F0, $00
   .DB E_WAIT, 60
-  .DB E_MOVE, 60, $F0, $00
+  .DB E_FIRE, 1, 2, 2, $E8, $00
+  .DB E_FIRE, 1, 2, 2, $EE, $EE
+  .DB E_FIRE, 1, 2, 2, $EE, $12
+  .DB E_WAIT, 30,
+  .DB E_FIRE, 1, 2, 2, $E8, $00
+  .DB E_FIRE, 1, 2, 2, $EE, $EE
+  .DB E_FIRE, 1, 2, 2, $EE, $12
+  .DB E_WAIT, 30,
+  .DB E_MOVE, 128, $F0, $00
+  .DB E_DELETE, 0
+
+e_star_5_way:
+  .DB E_ANIM, 1, 1
+  .DB E_MOVE, 48, $F0, $00
+  .DB E_WAIT, 60
+  .DB E_FIRE, 1, 2, 2, $E8, $00
+  .DB E_FIRE, 1, 2, 2, $EB, $F8
+  .DB E_FIRE, 1, 2, 2, $EE, $EE
+  .DB E_FIRE, 1, 2, 2, $EB, $08
+  .DB E_FIRE, 1, 2, 2, $EE, $12
+  .DB E_WAIT, 30,
+  .DB E_FIRE, 1, 2, 2, $E8, $00
+  .DB E_FIRE, 1, 2, 2, $EB, $F8
+  .DB E_FIRE, 1, 2, 2, $EE, $EE
+  .DB E_FIRE, 1, 2, 2, $EB, $08
+  .DB E_FIRE, 1, 2, 2, $EE, $12
+  .DB E_WAIT, 30,
+  .DB E_FIRE, 1, 2, 2, $E8, $00
+  .DB E_FIRE, 1, 2, 2, $EB, $F8
+  .DB E_FIRE, 1, 2, 2, $EE, $EE
+  .DB E_FIRE, 1, 2, 2, $EB, $08
+  .DB E_FIRE, 1, 2, 2, $EE, $12
+  .DB E_WAIT, 30,
+  .DB E_MOVE, 128, $F0, $00
+  .DB E_DELETE, 0
+
+e_sine_slow:
+  .DB E_ANIM, 1, 2
+  .DB E_SINE, 255, $F4
   .DB E_DELETE, 0
 
 enemy_script_lo:
-  .DB <e_dummy_script
+  .DB <e_straight_l
+  .DB <e_straight_lu
+  .DB <e_straight_ld
+  .DB <e_star_3_seq
+  .DB <e_star_3_way
+  .DB <e_star_5_way
+  .DB <e_sine_slow
 
 enemy_script_hi:
-  .DB >e_dummy_script
+  .DB >e_straight_l
+  .DB >e_straight_lu
+  .DB >e_straight_ld
+  .DB >e_star_3_seq
+  .DB >e_star_3_way
+  .DB >e_star_5_way
+  .DB >e_sine_slow
 
 e_sprite_gx:
   .REPT 10 INDEX I
     .DB I*9
   .ENDR
+  .REPT 4 INDEX I
+    .DB I*16
+  .ENDR
+  .DB 64
 
 e_sprite_gy:
   .REPT 10
     .DB 40
   .ENDR
+  .REPT 4
+    .DB 32
+  .ENDR
+  .DB 32
 
 e_sprite_w:
   .REPT 10
     .DB 9
   .ENDR
+  .REPT 4
+    .DB 8
+  .ENDR
+  .DB 8
 
 e_sprite_h:
   .REPT 10
     .DB 8
   .ENDR
+  .REPT 8
+    .DB 8
+  .ENDR
+  .DB 8
 
 anim_len:
-  .DB 10  ; Dummy Enemy
+  .DB 1   ; Dummy Enemy
+  .DB 4   ; Star
+  .DB 1   ; Sine
 
 anim_speed:
-  .DB 4   ; Dummy Enemy
+  .DB $FF ; Dummy Enemy
+  .DB 8   ; Star
+  .DB $FF ; Sine
 
 anim_frame0:
   .DB 0   ; Dummy Enemy
+  .DB 10  ; Star
+  .DB 18  ; Sine
 .ENDS
 
