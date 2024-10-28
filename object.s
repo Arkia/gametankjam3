@@ -444,6 +444,11 @@ e_fire:
   sta eshot_vy_lo.w,y             ; Set shot subpixel VY
   lda enemy_vy_hi.w,x             ; Get VY
   sta eshot_vy_hi.w,y             ; Set shot VY
+  phx                             ; Save enemy index
+  ldx #1                          ; Sound channel 1
+  ldy #1                          ; Enemy Shoot sfx
+  jsr play_sound                  ; Play sound
+  plx                             ; Restore enemy index
 @end
   jsr enemy_next_state            ; Next state
   ldy enemy_state.w,x             ; Get state ID

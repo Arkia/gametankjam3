@@ -114,12 +114,24 @@ update_sound:
 .SECTION "SoundEffects" BANK 0 SLOT 3
 sfx_table_lo:
   .DB <sfx_shoot
+  .DB <sfx_eshoot
 sfx_table_hi:
   .DB >sfx_shoot
+  .DB >sfx_eshoot
 sfx_shoot:
   .DB $80
   .DB $20, $81
   .DB $1E, $71
+  .DB $1C, $61
+  .DB $1A, $51
+  .DB $18, $41
+  .DB $16, $31
+  .DB $14, $21
+  .DB $12, $11
+  .DB $10, $00
+
+sfx_eshoot:
+  .DB $80
   .DB $1C, $61
   .DB $1A, $51
   .DB $18, $41

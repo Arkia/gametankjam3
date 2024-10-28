@@ -78,7 +78,7 @@ level_data_hi:
   .DB >level1_data
 level1_data:
   .TABLE  byte, byte, byte, word
-  .DATA   $12,   64,  128,  360
+  .DATA   $03,  128,   64,  360
   .DATA   $00,  128,   64,   60
   .DATA   $01,  128,   64,   60
   .DATA   $02,  128,   64,   60
