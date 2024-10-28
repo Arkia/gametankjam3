@@ -1146,7 +1146,7 @@ e_sprite_h:
   .ENDR
 
 anim_len:
-  .DB 1   ; Dummy Enemy
+  .DB 10  ; Dummy Enemy
   .DB 4   ; Star
   .DB 1   ; Sine
   .DB 1   ; Spike Down
@@ -1156,7 +1156,7 @@ anim_len:
   .DB 13  ; Explosion
 
 anim_speed:
-  .DB $FF ; Dummy Enemy
+  .DB 4   ; Dummy Enemy
   .DB 8   ; Star
   .DB $FF ; Sine
   .DB $FF ; Spike Down

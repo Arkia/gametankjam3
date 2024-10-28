@@ -188,7 +188,18 @@ level1_data:
   E_HORIZ $0C, 4, 16, 8, 8, 16
   E_HORIZ $0F, 116, -16, 128, 8, 16
   L_DELAY 60
-
+  .REPT 8
+    E_RANDOM_V $01, 16, 94, 8, 24
+    E_RANDOM_H $0C, 4, 116, 8, 1, 24
+    E_RANDOM_V $01, 16, 94, 8, 24
+    E_RANDOM_H $0F, 4, 116, 128, 1, 24
+  .ENDR
+  E_RANDOM_V $01, 16, 94, 8, 24
+  L_DELAY 120
+  .DATA $06, 128, 60, 180
+  .DATA $06, 128, 60, 32
+  .DATA $08, 131, 44, 2
+  .DATA $08, 128, 76, 90
   L_DELAY 500
   L_END
 .ENDS
