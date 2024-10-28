@@ -989,9 +989,9 @@ e_bomb_left:
 
 e_bomb_down:
   .DB E_ANIM, 1, 5
-  .DB E_MOVE, 40, $00, $10
+  .DB E_MOVE, 32, $00, $10
   .DB E_ANIM, 1, 6
-  .DB E_WAIT, 90
+  .DB E_WAIT, 60
   .DB E_FIRE, 1, 2, 2, $E8, $00
   .DB E_FIRE, 1, 2, 2, $00, $E8
   .DB E_FIRE, 1, 2, 2, $18, $00
@@ -1004,9 +1004,9 @@ e_bomb_down:
 
 e_bomb_up:
   .DB E_ANIM, 1, 5
-  .DB E_MOVE, 40, $00, $F0
+  .DB E_MOVE, 32, $00, $F0
   .DB E_ANIM, 1, 6
-  .DB E_WAIT, 90
+  .DB E_WAIT, 60
   .DB E_FIRE, 1, 2, 2, $E8, $00
   .DB E_FIRE, 1, 2, 2, $00, $E8
   .DB E_FIRE, 1, 2, 2, $18, $00
