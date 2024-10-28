@@ -94,6 +94,13 @@ update_level:
   .ENDR
 .ENDM
 
+; ARGS: Enemy ID, X-Start, X-Step, Y, Count, Delay Ticks
+.MACRO E_HORIZ
+  .REPT \5 INDEX I
+    .DATA   \1, \2+I*\3,  \4, \6
+  .ENDR
+.ENDM
+
 ; ARGS: Enemy ID, Y-Start, Y-Step, Count, Delay Ticks
 .MACRO E_TO_MIDDLE
   .DATA   \1,  128,  \2,   \5
@@ -137,6 +144,8 @@ level1_data:
   E_FROM_MIDDLE $01, 64, 8, 2, 16
   L_DELAY 120
   E_RANDOM $01, 24, 112, 8, 32
+  L_DELAY 120
+  E_HORIZ $0C, 16, 16, 0, 6, 16
   L_DELAY 300
   L_END
 .ENDS

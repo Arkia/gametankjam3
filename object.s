@@ -234,8 +234,13 @@ enemy_next_state:
   iny
   sta enemy_anim.w,x
   stz enemy_frame.w,x
-  lda #1
+  phy
+  tay
+  lda anim_speed.w,y
   sta enemy_atimer.w,x
+  lda anim_frame0.w,y
+  sta enemy_sprite.w,x
+  ply
   bra @end
 @spawn
   plx
@@ -347,6 +352,8 @@ remove_enemy:
   sta enemy_vy_hi.w,x
   lda enemy_timer.w,y
   sta enemy_timer.w,x
+  lda enemy_sprite.w,y
+  sta enemy_sprite.w,x
   lda enemy_frame.w,y
   sta enemy_frame.w,x
   lda enemy_anim.w,y
@@ -387,7 +394,7 @@ update_enemies:
   sta enemy_frame.w,x         ; Set frame
   clc                         ; Setup addition
   adc anim_frame0.w,y         ; Calculate sprite ID
-  sta enemy_sprite.w,x         ; Set sprite
+  sta enemy_sprite.w,x        ; Set sprite
 ++
   ldy enemy_state.w,x         ; Get enemy state id
   jsr call_enemy_state        ; Call state function
@@ -483,7 +490,7 @@ enemy_pshot_collision:
   sta bcd_lives               ; Update lives
   phx                         ; Save enemy index
   ldy #4                      ; Gain life sfx
-  ldx #4                      ; Channel 4
+  ldx #2                      ; Channel 4
   jsr play_sound
   plx                         ; Restore X
 +
@@ -588,6 +595,9 @@ e_fire:
   jmp call_enemy_state            ; Call state update
 
 e_anim:
+  ldy enemy_anim.w,x
+  lda anim_frame0.w,y
+  sta enemy_sprite.w,x
   jsr enemy_next_state
   ldy enemy_state.w,x
   jmp call_enemy_state
@@ -1055,9 +1065,9 @@ enemy_script_hi:
   .DB >e_bomb_up
 
 e_score_value:
-  .DB $50
-  .DB $50
-  .DB $50
+  .DB $01
+  .DB $01
+  .DB $01
   .DB $02
   .DB $02
   .DB $02
