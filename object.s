@@ -759,6 +759,39 @@ e_sine_slow:
   .DB E_SINE, 255, $F4
   .DB E_DELETE, 0
 
+e_sine_fast:
+  .DB E_ANIM, 1, 2
+  .DB E_SINE, 255, $E8
+  .DB E_DELETE, 0
+
+e_sine_slow_fire_1:
+  .DB E_ANIM, 1, 2
+  .DB E_SINE, 48, $F4
+  .DB E_FIRE, 1, -4, 2, $E0, $00
+  .DB E_SINE, 48, $F4
+  .DB E_FIRE, 1, -4, 2, $E0, $00
+  .DB E_SINE, 48, $F4
+  .DB E_FIRE, 1, -4, 2, $E0, $00
+  .DB E_SINE, 80, $F4
+  .DB E_DELETE, 0
+
+e_sine_slow_fire_3:
+  .DB E_ANIM, 1, 2
+  .DB E_SINE, 48, $F4
+  .DB E_FIRE, 1, 2, 2, $E0, $00
+  .DB E_FIRE, 1, 2, 2, $EC, $EC
+  .DB E_FIRE, 1, 2, 2, $EC, $12
+  .DB E_SINE, 48, $F4
+  .DB E_FIRE, 1, 2, 2, $E0, $00
+  .DB E_FIRE, 1, 2, 2, $EC, $EC
+  .DB E_FIRE, 1, 2, 2, $EC, $14
+  .DB E_SINE, 48, $F4
+  .DB E_FIRE, 1, 2, 2, $E0, $00
+  .DB E_FIRE, 1, 2, 2, $EC, $EC
+  .DB E_FIRE, 1, 2, 2, $EC, $12
+  .DB E_SINE, 80, $F4
+  .DB E_DELETE, 0
+
 enemy_script_lo:
   .DB <e_straight_l
   .DB <e_straight_lu
@@ -767,6 +800,9 @@ enemy_script_lo:
   .DB <e_star_3_way
   .DB <e_star_5_way
   .DB <e_sine_slow
+  .DB <e_sine_fast
+  .DB <e_sine_slow_fire_1
+  .DB <e_sine_slow_fire_3
 
 enemy_script_hi:
   .DB >e_straight_l
@@ -776,6 +812,9 @@ enemy_script_hi:
   .DB >e_star_3_way
   .DB >e_star_5_way
   .DB >e_sine_slow
+  .DB >e_sine_fast
+  .DB >e_sine_slow_fire_1
+  .DB >e_sine_slow_fire_3
 
 e_sprite_gx:
   .REPT 10 INDEX I
@@ -785,6 +824,8 @@ e_sprite_gx:
     .DB I*16
   .ENDR
   .DB 64
+  .DB 72
+  .DB 80
 
 e_sprite_gy:
   .REPT 10
@@ -793,6 +834,8 @@ e_sprite_gy:
   .REPT 4
     .DB 32
   .ENDR
+  .DB 32
+  .DB 32
   .DB 32
 
 e_sprite_w:
@@ -803,20 +846,25 @@ e_sprite_w:
     .DB 8
   .ENDR
   .DB 8
+  .DB 8
+  .DB 8
 
 e_sprite_h:
   .REPT 10
     .DB 8
   .ENDR
-  .REPT 8
+  .REPT 4
     .DB 8
   .ENDR
+  .DB 8
+  .DB 8
   .DB 8
 
 anim_len:
   .DB 1   ; Dummy Enemy
   .DB 4   ; Star
   .DB 1   ; Sine
+  .DB 1   ; Spike Up
 
 anim_speed:
   .DB $FF ; Dummy Enemy
@@ -826,6 +874,6 @@ anim_speed:
 anim_frame0:
   .DB 0   ; Dummy Enemy
   .DB 10  ; Star
-  .DB 18  ; Sine
+  .DB 14  ; Sine
 .ENDS
 
