@@ -223,7 +223,7 @@ update_player:
   sta pshot_y.w,x     ; Set shot Y
   lda #PLAYER_SHOT_DELAY
   sta player_stimer
-  ldy #0              ; Sound ID 0
+  ldy #4              ; Sound ID 0
   ldx #0              ; Channel 0
   jsr play_sound      ; Play SFX
 +
