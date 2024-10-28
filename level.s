@@ -71,6 +71,7 @@ update_level:
   rts                                   ; Return
 .ENDS
 
+; ARGS: Delay Ticks
 .MACRO L_DELAY
   .DATA   $00,  0,  0,  \1
 .ENDM
@@ -79,32 +80,43 @@ update_level:
   .DATA   $FF,  0,  0,  0
 .ENDM
 
-.MACRO SL_DECEND
-  .REPT 3 INDEX I
-    .DATA   $01,  128,  \1+I*\2,  \3
+; ARGS: Enemy ID, Y-Start, Y-Step, Count, Delay Ticks
+.MACRO E_DECEND
+  .REPT \4 INDEX I
+    .DATA   \1,  128,  \2+I*\3,  \5
   .ENDR
 .ENDM
 
-.MACRO SL_ACCEND
-  .REPT 3 INDEX I
-    .DATA   $01,  128,  \1-I*\2,  \3
+; ARGS: Enemy ID, Y-Start, Y-Step, Count, Delay Ticks
+.MACRO E_ACCEND
+  .REPT \4 INDEX I
+    .DATA   \1,  128,  \2-I*\3,  \5
   .ENDR
 .ENDM
 
-.MACRO SL_TO_MIDDLE
-  .DATA   $01,  128,  \1,   \3
-  .REPT 2 INDEX I
-    .DATA   $01,  129,  \1-(I+1)*\2,  1
-    .DATA   $01,  128,  \1+(I+1)*\2,  \3
+; ARGS: Enemy ID, Y-Start, Y-Step, Count, Delay Ticks
+.MACRO E_TO_MIDDLE
+  .DATA   \1,  128,  \2,   \5
+  .REPT \4 INDEX I
+    .DATA   \1,  129,  \2-(I+1)*\3,  1
+    .DATA   \1,  128,  \2+(I+1)*\3,  \5
   .ENDR
 .ENDM
 
-.MACRO SL_FROM_MIDDLE
-  .REPT 2 INDEX I
-    .DATA   $01,  129,  \1-(2-I)*\2,  1
-    .DATA   $01,  128,  \1+(2-I)*\2,  \3
+; ARGS: Enemy ID, Y-Start, Y-Step, Count, Delay Ticks
+.MACRO E_FROM_MIDDLE
+  .REPT \4 INDEX I
+    .DATA   \1,  129,  \2-(2-I)*\3,  1
+    .DATA   \1,  128,  \2+(2-I)*\3,  \5
   .ENDR
-  .DATA   $01,  128,  \1,   \3
+  .DATA   \1,  128,  \2,   \5
+.ENDM
+
+; ARGS: Enemy ID, Y-Min, Y-Max, Count, Delay Ticks
+.MACRO E_RANDOM
+  .REPT \4
+    .DATA   \1,  128,  random(\2/4, \3/4)*4, \5
+  .ENDR
 .ENDM
 
 .SECTION "LevelData" BANK 0 SLOT "BankROM"
@@ -113,15 +125,18 @@ level_data_lo:
 level_data_hi:
   .DB >level1_data
 level1_data:
+  .SEED 1000
   .TABLE  byte, byte, byte, word
   L_DELAY 300
-  SL_DECEND 48, 8, 16
+  E_DECEND $01, 48, 8, 3, 16
   L_DELAY 120
-  SL_ACCEND 80, 8, 16
+  E_ACCEND $01, 80, 8, 3, 16
   L_DELAY 120
-  SL_TO_MIDDLE 64, 8, 16
+  E_TO_MIDDLE $01, 64, 8, 2, 16
   L_DELAY 120
-  SL_FROM_MIDDLE 64, 8, 16
+  E_FROM_MIDDLE $01, 64, 8, 2, 16
+  L_DELAY 120
+  E_RANDOM $01, 24, 112, 8, 32
   L_DELAY 300
   L_END
 .ENDS

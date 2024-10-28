@@ -34,6 +34,31 @@ init_player:
   stz player_iframe
   rts                 ; Return
 
+kill_player:
+  ldx effect_count
+  cpy EFFECT_MAX
+  beq +
+  inc effect_count
+  sec
+  lda player_x+1
+  sbc #4
+  sta effect_x.w,x
+  sec
+  lda player_y+1
+  sbc #4
+  sta effect_y.w,x
+  lda #7
+  sta effect_anim.w,x
+  jsr init_effect_anim
++
+  lda #%10000000
+  sta player_state    ; Set player to dead
+  lda #PLAYER_DEAD_TIME
+  sta player_timer
+  ldy #2              ; Death sfx
+  ldx #2              ; Channel 2
+  jmp play_sound
+
 update_player:
   bit player_state          ; Get player state
   bpl ++                    ; If dead, no update
@@ -100,14 +125,7 @@ update_player:
   sta b_y             ; Set B.Y
   jsr test_collision  ; Check collision
   bcs +               ; If no collision, next enemy
-  lda #%10000000
-  sta player_state    ; Set player to dead
-  lda #PLAYER_DEAD_TIME
-  sta player_timer
-  ldy #2              ; Death sfx
-  ldx #2              ; Channel 2
-  jsr play_sound
-  rts                 ; No more updates
+  jmp kill_player
 +
   dex                 ; Next enemy
   bpl -               ; Loop
@@ -136,13 +154,7 @@ update_player:
   sta b_y             ; Set B.Y
   jsr test_collision  ; Check for collision
   bcs +               ; If no collision, next enemy
-  inc player_state    ; Set player to dead
-  lda #PLAYER_DEAD_TIME
-  sta player_timer
-  ldy #2              ; Death sfx
-  ldx #2              ; Channel 2
-  jsr play_sound
-  rts                 ; No more updates
+  jmp kill_player
 +
   dex                 ; Next enemy
   bpl -               ; Loop
