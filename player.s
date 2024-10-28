@@ -41,6 +41,13 @@ update_player:
   beq +
   rts
 +
+  lda bcd_lives             ; Get player lives
+  bne +
+  rts
++
+  sed                       ; Set decimal mode
+  dec bcd_lives             ; Lives - 1
+  cld                       ; Clear decimal mode
   jsr init_player           ; Reset player object
   lda #PLAYER_IFRAMES
   sta player_iframe
@@ -66,6 +73,8 @@ update_player:
   beq +                     ; If not zero
   dec player_stimer         ; Decrement shot delay timer
 +
+  lda player_iframe   ; Check for IFrames
+  bne @do_input       ; If IFrames, skip collision checks
   ldx enemy_count     ; Load number of enemies
   beq @check_eshots   ; Skip if list is empty
   lda player_x+1      ; Get X position

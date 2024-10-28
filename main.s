@@ -222,12 +222,14 @@ update_input:
   rts                         ; Return
   
 irq:
+  cld                         ; Clear decimal mode
   stz draw_status             ; Blitter finished
   stz DMA_START               ; Clear interrupt
   jsr draw_resume             ; Resume pending draw routine
   rti
   
 nmi:
+  cld                       ; Clear decimal mode
   pha
   phx
   phy
