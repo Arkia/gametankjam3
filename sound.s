@@ -172,7 +172,8 @@ sfx_respawn:
 
 sfx_life_up:
   .DB $80
-  .DB $18, $A8
-  .DB $30, $AF
-  .DB $30, $00
+  .DB $18, $88
+  .DB $18, $02
+  .DB $2C, $8F
+  .DB $2C, $00
 .ENDS
