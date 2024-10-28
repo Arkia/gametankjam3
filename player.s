@@ -108,13 +108,11 @@ update_player:
   ldx enemy_count     ; Load number of enemies
   beq @check_eshots   ; Skip if list is empty
   lda player_x+1      ; Get X position
-  ina                 ; Add 2
-  ina
   sta a_x             ; Set A.X
   lda player_y+1      ; Get Y position
-  ina                 ; Add 1
+  dea
   sta a_y             ; Set A.Y
-  lda #5              ; Combined AABB sizes
+  lda #7              ; Combined AABB sizes
   sta size_x
   sta size_y
   dex                 ; Index last enemy
@@ -133,17 +131,13 @@ update_player:
   ldx eshot_count     ; Load number of enemy shots
   beq @do_input       ; Skip if list is empty
   lda player_x+1      ; Get X position
-  ina                 ; Add 4
-  ina
-  ina
+  ina                 ; Add 2
   ina
   sta a_x             ; Set A.X
   lda player_y+1      ; Get Y position
-  ina                 ; Add 3
-  ina
-  ina
+  ina                 ; Add 1
   sta a_y             ; Set A.Y
-  lda #3              ; Combined AABB size
+  lda #5              ; Combined AABB size
   sta size_x
   sta size_y
   dex                 ; Last enemy index
