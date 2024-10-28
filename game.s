@@ -12,7 +12,8 @@
 
 .SECTION "GameRoutines" BANK 1 SLOT "FixedROM"
 init_game:
-  stz bcd_lives
+  lda #5
+  sta bcd_lives
   stz bcd_score
   stz bcd_score+1
   stz bcd_score+2

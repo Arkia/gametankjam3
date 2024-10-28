@@ -67,7 +67,7 @@ update_player:
   dec player_stimer         ; Decrement shot delay timer
 +
   ldx enemy_count     ; Load number of enemies
-  beq @do_input       ; Skip if list is empty
+  beq @check_eshots   ; Skip if list is empty
   lda player_x+1      ; Get X position
   ina                 ; Add 2
   ina
@@ -85,6 +85,38 @@ update_player:
   lda enemy_y_hi.w,x  ; Get enemy Y
   sta b_y             ; Set B.Y
   jsr test_collision  ; Check collision
+  bcs +               ; If no collision, next enemy
+  inc player_state    ; Set player to dead
+  lda #PLAYER_DEAD_TIME
+  sta player_timer
+  rts                 ; No more updates
++
+  dex                 ; Next enemy
+  bpl -               ; Loop
+@check_eshots
+  ldx eshot_count     ; Load number of enemy shots
+  beq @do_input       ; Skip if list is empty
+  lda player_x+1      ; Get X position
+  ina                 ; Add 4
+  ina
+  ina
+  ina
+  sta a_x             ; Set A.X
+  lda player_y+1      ; Get Y position
+  ina                 ; Add 3
+  ina
+  ina
+  sta a_y             ; Set A.Y
+  lda #3              ; Combined AABB size
+  sta size_x
+  sta size_y
+  dex                 ; Last enemy index
+-
+  lda eshot_x_hi.w,x  ; Get shot X
+  sta b_x             ; Set B.X
+  lda eshot_y_hi.w,x  ; Get shot Y
+  sta b_y             ; Set B.Y
+  jsr test_collision  ; Check for collision
   bcs +               ; If no collision, next enemy
   inc player_state    ; Set player to dead
   lda #PLAYER_DEAD_TIME
