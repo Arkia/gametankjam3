@@ -101,6 +101,17 @@ update_level:
   .ENDR
 .ENDM
 
+; ARGS: Enemy ID 0, Enemy ID 1, X-Start, X-Step, Count, Delay Ticks
+.MACRO E_HORIZ_ALT
+  .REPT \5 INDEX I
+    .IF I#2
+      .DATA \1, \3+I*\4, 8, \6
+    .ELSE
+      .DATA \2, \3+I*\4, 128, \6
+    .ENDIF
+  .ENDR
+.ENDM
+
 ; ARGS: Enemy ID, Y-Start, Y-Step, Count, Delay Ticks
 .MACRO E_TO_MIDDLE
   .DATA   \1,  128,  \2,   \5
@@ -120,9 +131,16 @@ update_level:
 .ENDM
 
 ; ARGS: Enemy ID, Y-Min, Y-Max, Count, Delay Ticks
-.MACRO E_RANDOM
+.MACRO E_RANDOM_V
   .REPT \4
     .DATA   \1,  128,  random(\2/4, \3/4)*4, \5
+  .ENDR
+.ENDM
+
+; ARGS: Enemy ID, X-Min, X-Max, Y, Count, Delay Ticks
+.MACRO E_RANDOM_H
+  .REPT \5
+    .DATA   \1, random(\2/4, \3/4)*4, \4, \6
   .ENDR
 .ENDM
 
@@ -143,9 +161,9 @@ level1_data:
   L_DELAY 120
   E_FROM_MIDDLE $01, 64, 8, 2, 16
   L_DELAY 120
-  E_RANDOM $01, 24, 112, 8, 32
+  E_RANDOM_V $01, 24, 112, 8, 32
   L_DELAY 120
-  E_HORIZ $0C, 16, 16, 0, 6, 16
+  E_RANDOM_H $0C, 24, 112, 8, 8, 32
   L_DELAY 300
   L_END
 .ENDS
