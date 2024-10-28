@@ -98,6 +98,9 @@ update_player:
   inc player_state    ; Set player to dead
   lda #PLAYER_DEAD_TIME
   sta player_timer
+  ldy #2              ; Death sfx
+  ldx #2              ; Channel 2
+  jsr play_sound
   rts                 ; No more updates
 +
   dex                 ; Next enemy
@@ -130,6 +133,9 @@ update_player:
   inc player_state    ; Set player to dead
   lda #PLAYER_DEAD_TIME
   sta player_timer
+  ldy #2              ; Death sfx
+  ldx #2              ; Channel 2
+  jsr play_sound
   rts                 ; No more updates
 +
   dex                 ; Next enemy

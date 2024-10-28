@@ -115,9 +115,11 @@ update_sound:
 sfx_table_lo:
   .DB <sfx_shoot
   .DB <sfx_eshoot
+  .DB <sfx_death
 sfx_table_hi:
   .DB >sfx_shoot
   .DB >sfx_eshoot
+  .DB >sfx_death
 sfx_shoot:
   .DB $80
   .DB $20, $81
@@ -139,4 +141,15 @@ sfx_eshoot:
   .DB $14, $21
   .DB $12, $11
   .DB $10, $00
+
+sfx_death:
+  .DB $40
+  .DB $20, $A2
+  .DB $18, $A2
+  .DB $10, $A4
+  .DB $08, $A4
+  .DB $06, $A4
+  .DB $04, $A4
+  .DB $02, $A4
+  .DB $02, $00
 .ENDS

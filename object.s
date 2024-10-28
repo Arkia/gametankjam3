@@ -356,6 +356,9 @@ enemy_pshot_collision:
   tya                         ; Move pshot index to A
   tax                         ; Move to X
   jsr remove_pshot            ; Delete shot collided with
+  ldy #2                      ; Death SFX
+  ldx #2                      ; Channel 2
+  jsr play_sound              ; Play sound
   plx                         ; Restore X
   clc                         ; Flag collision
   rts                         ; Return
