@@ -3,6 +3,7 @@
   bcd_score         dsb 3
   bcd_state         db
   bcd_write         dw
+  pause_state       db
 .ENDS
 
 .RAMSECTION "StatusStrings" BANK 0 SLOT "WRAM"
@@ -12,6 +13,7 @@
 
 .SECTION "GameRoutines" BANK 1 SLOT "FixedROM"
 init_pre_level:
+  stz pause_state
   lda #5
   sta bcd_lives
   stz bcd_score
@@ -188,6 +190,15 @@ init_game:
   jmp init_level
 
 update_game:
+  lda p1_press                ; Get pressed buttons
+  and #PAD_START              ; Check for Start button
+  beq +
+  lda pause_state             ; Load pause state
+  eor #1                      ; Toggle pause
+  sta pause_state             ; Update pause state
++
+  lda pause_state             ; Check for paused
+  bne +                       ; If paused, skip updates
   jsr update_player           ; Move player
   jsr update_level            ; Spawn enemies
   lda level_state             ; Check level done
@@ -197,12 +208,18 @@ update_game:
 +
   jsr wait_blitter            ; Wait for clear screen to finish
   jsr draw_level1_bg          ; Draw level background
+  lda pause_state
+  bne +
   jsr update_enemies          ; Move enemies
   jsr update_effects
   jsr update_pshots           ; Move player projectiles
   jsr update_eshots           ; Move enemy projectiles
   jsr update_status_bar       ; Print lives/score strings
++
   jmp draw_game               ; Draw objects
+
+str_pause:
+  .ASC "PAUSED"
 
 update_status_bar:
   lda #<(str_lives+2)

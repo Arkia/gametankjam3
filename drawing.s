@@ -133,6 +133,20 @@ draw_game:
   jsr wait_blitter
   jsr draw_effects
   jsr draw_status_bar
+  lda pause_state
+  beq +
+  lda #<str_pause
+  sta draw_data
+  lda #>str_pause
+  sta draw_data+1
+  lda #_sizeof_str_pause
+  sta draw_data+2
+  lda #46
+  sta draw_data+3
+  lda #60
+  sta draw_data+4
+  jsr draw_string
++
   lda #$FF
   jsr draw_border
   jsr wait_blitter
@@ -142,6 +156,8 @@ draw_level1_bg:
   lda dma_flags               ; Get blitter flags
   and #%11101111              ; Clear GCARRY
   sta DMA_FLAGS
+  lda pause_state
+  bne +
   dec bg_scroll_timer         ; Decrement scroll timer
   bne +                       ; If timer is 0
   lda #L1_SCROLL_DELAY        ; Reset scroll timer
