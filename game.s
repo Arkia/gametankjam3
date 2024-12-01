@@ -6,7 +6,7 @@
   pause_state       db
 .ENDS
 
-.RAMSECTION "StatusStrings" BANK 0 SLOT "WRAM"
+.RAMSECTION "StatusStrings" BANK 0 SLOT "ZeroPage"
   str_lives         dsb 4
   str_score         dsb 6
 .ENDS
