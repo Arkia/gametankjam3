@@ -246,6 +246,9 @@ enemy_next_state:
   plx
   lda (temp),y
   iny
+  sta enemy_misc0.w,x
+  lda (temp),y
+  iny
   sta enemy_vx_lo.w,x
   lda (temp),y
   iny
@@ -602,6 +605,28 @@ e_anim:
   ldy enemy_state.w,x
   jmp call_enemy_state
 
+e_spawn:
+  phx                             ; Save enemy index
+  lda enemy_misc0.w,x             ; Get enemy ID to spawn
+  jsr spawn_object                ; Spawn new enemy
+  ply                             ; Pop enemy index into Y
+  cpx #$FF                        ; Check for valid index
+  beq @end                        ; If X is $FF, failed to spawn object
+  clc                             ; Clear carry
+  lda enemy_x_hi.w,y              ; Get enemy X position
+  adc enemy_vx_lo.w,y             ; Add spawn offset X
+  sta enemy_x_hi.w,x              ; Set spawned enemy X position
+  clc                             ; Clear carry
+  lda enemy_y_hi.w,y              ; Get enemy Y position
+  adc enemy_vy_lo.w,y             ; Add spawn offset Y
+  sta enemy_y_hi.w,x              ; Set spawned enemy Y position
+@end
+  tya                             ; Restore enemy index back to X
+  tax
+  jsr enemy_next_state            ; Next state
+  ldy enemy_state.w,x             ; Get state ID
+  jmp call_enemy_state            ; Call state update
+
 e_delete:
   clc
   rts
@@ -615,7 +640,7 @@ enemy_func_lo:
   .DB <(e_wait-1)
   .DB <(e_anim-1)
   .DB <(e_wait-1)
-  .DB <(e_wait-1)
+  .DB <(e_spawn-1)
   .DB <(e_delete-1)
 
 enemy_func_hi:
@@ -627,7 +652,7 @@ enemy_func_hi:
   .DB >(e_wait-1)
   .DB >(e_anim-1)
   .DB >(e_wait-1)
-  .DB >(e_wait-1)
+  .DB >(e_spawn-1)
   .DB >(e_delete-1)
 
 draw_enemies:
@@ -1017,6 +1042,12 @@ e_bomb_up:
   .DB E_FIRE, 1, 2, 2, $12, $EE
   .DB E_DELETE, 0
 
+e_spawn_test:
+  .DB E_SPAWN, 2, $01, 0, -16
+  .DB E_SPAWN, 1, $01, 0, 0
+  .DB E_SPAWN, 1, $01, 0, 16
+  .DB E_DELETE, 0
+
 e_null:
   .DB E_DELETE, 0
 
@@ -1041,6 +1072,7 @@ enemy_script_lo:
   .DB <e_bomb_left
   .DB <e_bomb_down
   .DB <e_bomb_up
+  .DB <e_spawn_test
 
 enemy_script_hi:
   .DB >e_null
@@ -1063,6 +1095,7 @@ enemy_script_hi:
   .DB >e_bomb_left
   .DB >e_bomb_down
   .DB >e_bomb_up
+  .DB >e_spawn_test
 
 e_score_value:
   .DB $01
@@ -1084,6 +1117,7 @@ e_score_value:
   .DB $03
   .DB $03
   .DB $03
+  .DB $00
 
 e_sprite_gx:
   .REPT 10 INDEX I
