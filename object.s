@@ -182,6 +182,7 @@ spawn_object:
   stz enemy_pc.w,x            ; Reset script PC
   stz enemy_x_lo.w,x          ; Clear subpixel X
   stz enemy_y_lo.w,x          ; Clear subpixel Y
+  stz enemy_tc.w,x            ; Clear trigger jump target
   jmp enemy_next_state        ; Set initial state from script
 
 enemy_next_state:
@@ -259,9 +260,26 @@ enemy_next_state:
   iny
   sta enemy_vy_lo.w,x
   bra @end
+@trigger
+  plx
+  lda (temp),y
+  iny
+  sta enemy_tx.w,x
+  lda (temp),y
+  iny
+  sta enemy_ty.w,x
+  lda (temp),y
+  iny
+  sta enemy_tw.w,x
+  lda (temp),y
+  iny
+  sta enemy_th.w,x
+  lda (temp),y
+  iny
+  sta enemy_tc.w,x
+  bra @end
 @wait
 @delete
-@trigger
   plx
 @end
   tya
@@ -578,6 +596,11 @@ e_anim:
   ldy enemy_state.w,x
   jmp call_enemy_state
 
+e_trigger:
+  jsr enemy_next_state
+  ldy enemy_state.w,x
+  jmp call_enemy_state
+
 e_spawn:
   phx                             ; Save enemy index
   lda enemy_misc0.w,x             ; Get enemy ID to spawn
@@ -612,7 +635,7 @@ enemy_func_lo:
   .DB <(e_fire-1)
   .DB <(e_wait-1)
   .DB <(e_anim-1)
-  .DB <(e_wait-1)
+  .DB <(e_trigger-1)
   .DB <(e_spawn-1)
   .DB <(e_delete-1)
 
@@ -624,7 +647,7 @@ enemy_func_hi:
   .DB >(e_fire-1)
   .DB >(e_wait-1)
   .DB >(e_anim-1)
-  .DB >(e_wait-1)
+  .DB >(e_trigger-1)
   .DB >(e_spawn-1)
   .DB >(e_delete-1)
 
@@ -1021,6 +1044,15 @@ e_spawn_test:
   .DB E_SPAWN, 1, $01, 0, 16
   .DB E_DELETE, 0
 
+e_trigger_test:
+  .DB E_ANIM, 1, 3
+  .DB E_TRIGGER, 1, 4, 64, 4, 64, @fall-e_trigger_test
+  .DB E_MOVE, 128, $F0, $00
+  .DB E_DELETE, 0
+@fall
+  .DB E_MOVE, 64, $00, $20
+  .DB E_DELETE, 0
+
 e_null:
   .DB E_DELETE, 0
 
@@ -1046,6 +1078,7 @@ enemy_script_lo:
   .DB <e_bomb_down
   .DB <e_bomb_up
   .DB <e_spawn_test
+  .DB <e_trigger_test
 
 enemy_script_hi:
   .DB >e_null
@@ -1069,6 +1102,7 @@ enemy_script_hi:
   .DB >e_bomb_down
   .DB >e_bomb_up
   .DB >e_spawn_test
+  .DB >e_trigger_test
 
 e_score_value:
   .DB $01

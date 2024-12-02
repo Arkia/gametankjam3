@@ -104,14 +104,14 @@ update_player:
   dec player_stimer         ; Decrement shot delay timer
 +
   lda player_iframe   ; Check for IFrames
-  bne @do_input       ; If IFrames, skip collision checks
-  ldx enemy_count     ; Load number of enemies
-  beq @check_eshots   ; Skip if list is empty
+  bne @check_triggers ; If IFrames, skip object collisions
   lda player_x+1      ; Get X position
   sta a_x             ; Set A.X
   lda player_y+1      ; Get Y position
   dea
   sta a_y             ; Set A.Y
+  ldx enemy_count     ; Load number of enemies
+  beq @check_eshots   ; Skip if list is empty
   lda #7              ; Combined AABB sizes
   sta size_x
   sta size_y
@@ -129,7 +129,7 @@ update_player:
   bpl -               ; Loop
 @check_eshots
   ldx eshot_count     ; Load number of enemy shots
-  beq @do_input       ; Skip if list is empty
+  beq @check_triggers ; Skip if list is empty
   lda player_x+1      ; Get X position
   ina                 ; Add 2
   ina
@@ -152,6 +152,47 @@ update_player:
 +
   dex                 ; Next enemy
   bpl -               ; Loop
+@check_triggers
+  ldx enemy_count     ; Load number of enemies
+  beq @do_input       ; Skip if enemy list is empty
+-
+  clc                 ; Clear carry
+  lda player_x+1      ; Load player X
+  adc #4              ; Move to center
+  sta a_x             ; Set A.X
+  clc                 ; Clear carry
+  lda player_y+1      ; Load player Y
+  adc #4              ; Move to center
+  sta a_y             ; Set A.Y
+  dex                 ; Move to last enemy index
+-
+  lda enemy_tc.w,x    ; Enemy has trigger?
+  beq +               ; If not, skip enemy
+  clc                 ; Clear carry
+  lda enemy_x_hi.w,x  ; Get enemy X
+  adc enemy_tx.w,x    ; Add box offset
+  sta b_x             ; Set B.X
+  clc                 ; Clear carry
+  lda enemy_y_hi.w,x  ; Get enemy Y
+  adc enemy_ty.w,x    ; Add box offset
+  sta b_y             ; Set B.Y
+  clc                 ; Clear carry
+  lda enemy_tw.w,x    ; Get box half width
+  adc #4              ; Add player half width
+  sta size_x          ; Set combined half width
+  clc                 ; Clear carry
+  lda enemy_th.w,x    ; Get box half height
+  adc #4              ; Add player half height
+  sta size_y          ; Set combined half height
+  jsr test_collision  ; Check for collision
+  bcs +               ; If no collision, next enemy
+  lda enemy_tc.w,x    ; Get trigger jump target
+  sta enemy_pc.w,x    ; Set script PC
+  stz enemy_tc.w,x    ; Clear enemy trigger
+  jsr enemy_next_state
++
+  dex
+  bpl -
 @do_input
   bit player_state    ; Check player state
   bvc +               ; If no input state
