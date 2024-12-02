@@ -51,6 +51,11 @@
   enemy_vy_hi   dsb ENEMY_MAX
   enemy_state   dsb ENEMY_MAX
   enemy_timer   dsb ENEMY_MAX
+  enemy_tx      dsb ENEMY_MAX
+  enemy_ty      dsb ENEMY_MAX
+  enemy_tw      dsb ENEMY_MAX
+  enemy_th      dsb ENEMY_MAX
+  enemy_tc      dsb ENEMY_MAX
   enemy_sprite  dsb ENEMY_MAX
   enemy_frame   dsb ENEMY_MAX
   enemy_anim    dsb ENEMY_MAX
@@ -331,42 +336,10 @@ enemy_param_vy:
 remove_enemy:
   dec enemy_count             ; Decrement number of enemies
   ldy enemy_count             ; Index of last enemy in array
-  lda enemy_state.w,y         ; Copy into this enemy slot
-  sta enemy_state.w,x
-  lda enemy_id.w,y
-  sta enemy_id.w,x
-  lda enemy_pc.w,y
-  sta enemy_pc.w,x
-  lda enemy_x_lo.w,y
-  sta enemy_x_lo.w,x
-  lda enemy_x_hi.w,y
-  sta enemy_x_hi.w,x
-  lda enemy_y_lo.w,y
-  sta enemy_y_lo.w,x
-  lda enemy_y_hi.w,y
-  sta enemy_y_hi.w,x
-  lda enemy_vx_lo.w,y
-  sta enemy_vx_lo.w,x
-  lda enemy_vx_hi.w,y
-  sta enemy_vx_hi.w,x
-  lda enemy_vy_lo.w,y
-  sta enemy_vy_lo.w,x
-  lda enemy_vy_hi.w,y
-  sta enemy_vy_hi.w,x
-  lda enemy_timer.w,y
-  sta enemy_timer.w,x
-  lda enemy_sprite.w,y
-  sta enemy_sprite.w,x
-  lda enemy_frame.w,y
-  sta enemy_frame.w,x
-  lda enemy_anim.w,y
-  sta enemy_anim.w,x
-  lda enemy_atimer.w,y
-  sta enemy_atimer.w,x
-  lda enemy_misc0.w,y
-  sta enemy_misc0.w,x
-  lda enemy_misc1.w,y
-  sta enemy_misc1.w,x
+  .REPT 23 INDEX I            ; Copy into this enemy slot
+    lda enemy_id.w+I*ENEMY_MAX,y
+    sta enemy_id.w+I*ENEMY_MAX,x
+  .ENDR
   rts
 
 update_enemies:
