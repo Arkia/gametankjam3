@@ -152,7 +152,6 @@ level_data_hi:
 level1_data:
   .SEED 1000
   .TABLE  byte, byte, byte, word
-  .DATA $15, 128, 16, 32
   L_DELAY 300
   E_RANDOM_V $01, 16, 94, 16, 64
   L_DELAY 120

@@ -107,7 +107,7 @@ reset:
   sta next_state
   
 main_loop:
-  lda #~%11011011             ; Clear color
+  lda #~%10111011             ; Clear color
   jsr clear_screen            ; Clear screen
   jsr update_input            ; Read controllers
   lda next_state              ; Check for new state
